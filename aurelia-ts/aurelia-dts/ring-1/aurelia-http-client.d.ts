@@ -1,34 +1,17 @@
-declare module 'aurelia-http-client/headers' {
-	export class Headers {
-	    headers: any;
-	    constructor(headers?: {});
-	    add(key: any, value: any): void;
-	    get(key: any): any;
-	    clear(): void;
-	    configureXHR(xhr: any): void;
-	    /**
-	     * XmlHttpRequest's getAllResponseHeaders() method returns a string of response
-	     * headers according to the format described here:
-	     * http://www.w3.org/TR/XMLHttpRequest/#the-getallresponseheaders-method
-	     * This method parses that string into a user-friendly key/value pair object.
-	     */
-	    static parse(headerStr: any): Headers;
-	}
-
-}
 declare module 'aurelia-http-client/http-response-message' {
+	import { IXHRResponse, IRequestMessage, ResponseReviver, IHeaders } from 'aurelia-http-client/interfaces';
 	export class HttpResponseMessage {
-	    requestMessage: any;
-	    statusCode: any;
+	    requestMessage: IRequestMessage;
+	    statusCode: number;
 	    response: any;
-	    isSuccess: any;
-	    statusText: any;
-	    reviver: any;
-	    mimeType: any;
-	    responseType: any;
-	    headers: any;
+	    isSuccess: boolean;
+	    statusText: string;
+	    reviver: ResponseReviver;
+	    mimeType: string;
+	    responseType: string;
+	    headers: IHeaders;
 	    private _content;
-	    constructor(requestMessage: any, xhr: any, responseType: any, reviver?: any);
+	    constructor(requestMessage: IRequestMessage, xhr: IXHRResponse, responseType: string, reviver?: ResponseReviver);
 	    content: any;
 	}
 	/**
@@ -61,54 +44,69 @@ declare module 'aurelia-http-client/http-response-message' {
 
 }
 declare module 'aurelia-http-client/request-message-processor' {
+	import { IXHRType, IXHR, IRequestMessage, IRequestTransformer } from 'aurelia-http-client/interfaces';
+	import { HttpResponseMessage } from 'aurelia-http-client/http-response-message';
+	import { HttpClient } from 'aurelia-http-client/http-client';
 	export class RequestMessageProcessor {
-	    XHRType: any;
-	    transformers: any;
-	    xhr: any;
-	    constructor(xhrType: any, transformers: any);
+	    XHRType: IXHRType;
+	    transformers: IRequestTransformer[];
+	    xhr: IXHR;
+	    constructor(xhrType: IXHRType, transformers: IRequestTransformer[]);
 	    abort(): void;
-	    process(client: any, message: any): Promise<{}>;
+	    process(client: HttpClient, message: IRequestMessage): Promise<HttpResponseMessage>;
 	}
 
 }
 declare module 'aurelia-http-client/transformers' {
-	export function timeoutTransformer(client: any, processor: any, message: any, xhr: any): void;
-	export function callbackParameterNameTransformer(client: any, processor: any, message: any, xhr: any): void;
-	export function credentialsTransformer(client: any, processor: any, message: any, xhr: any): void;
-	export function progressTransformer(client: any, processor: any, message: any, xhr: any): void;
-	export function responseTypeTransformer(client: any, processor: any, message: any, xhr: any): void;
-	export function headerTransformer(client: any, processor: any, message: any, xhr: any): void;
-	export function contentTransformer(client: any, processor: any, message: any, xhr: any): void;
+	import { HttpClient } from 'aurelia-http-client/http-client';
+	import { RequestMessageProcessor } from 'aurelia-http-client/request-message-processor';
+	import { IXHRRequest, IRequestMessage } from 'aurelia-http-client/interfaces';
+	export function timeoutTransformer(client: HttpClient, processor: RequestMessageProcessor, message: IRequestMessage, xhr: IXHRRequest): void;
+	export function callbackParameterNameTransformer(client: HttpClient, processor: RequestMessageProcessor, message: IRequestMessage, xhr: IXHRRequest): void;
+	export function credentialsTransformer(client: HttpClient, processor: RequestMessageProcessor, message: IRequestMessage, xhr: IXHRRequest): void;
+	export function progressTransformer(client: HttpClient, processor: RequestMessageProcessor, message: IRequestMessage, xhr: IXHRRequest): void;
+	export function responseTypeTransformer(client: HttpClient, processor: RequestMessageProcessor, message: IRequestMessage, xhr: IXHRRequest): void;
+	export function headerTransformer(client: HttpClient, processor: RequestMessageProcessor, message: IRequestMessage, xhr: IXHRRequest): void;
+	export function contentTransformer(client: HttpClient, processor: RequestMessageProcessor, message: IRequestMessage, xhr: IXHRRequest): void;
 
 }
 declare module 'aurelia-http-client/http-request-message' {
+	import { IRequestMessage } from 'aurelia-http-client/interfaces';
+	import { Headers } from 'aurelia-http-client/headers';
 	import { RequestMessageProcessor } from 'aurelia-http-client/request-message-processor';
-	export class HttpRequestMessage {
-	    method: any;
-	    uri: any;
+	export class HttpRequestMessage implements IRequestMessage {
+	    method: string;
+	    uri: string;
 	    content: any;
-	    headers: any;
-	    responseType: any;
-	    constructor(method?: any, uri?: any, content?: any, headers?: any);
+	    headers: Headers;
+	    responseType: string;
+	    constructor(method?: string, uri?: string, content?: any, headers?: Headers);
 	}
 	export function createHttpRequestMessageProcessor(): RequestMessageProcessor;
 
 }
 declare module 'aurelia-http-client/jsonp-request-message' {
+	import { IRequestMessage } from 'aurelia-http-client/interfaces';
+	import { Headers } from 'aurelia-http-client/headers';
 	import { RequestMessageProcessor } from 'aurelia-http-client/request-message-processor';
-	export class JSONPRequestMessage {
-	    method: any;
-	    uri: any;
+	export class JSONPRequestMessage implements IRequestMessage {
+	    method: string;
+	    uri: string;
 	    content: any;
-	    headers: any;
-	    responseType: any;
-	    callbackParameterName: any;
-	    constructor(uri?: any, callbackParameterName?: any);
+	    headers: Headers;
+	    responseType: string;
+	    callbackParameterName: string;
+	    constructor(uri?: string, callbackParameterName?: string);
 	}
 	export function createJSONPRequestMessageProcessor(): RequestMessageProcessor;
 
 }
 declare module 'aurelia-http-client/request-builder' {
+	import { IRequestMessageTransformer, ResponseReviver, JSONContentReplacer, ICancellablePromise } from 'aurelia-http-client/interfaces';
+	import { HttpClient } from 'aurelia-http-client/http-client';
+	import { QueryStringValuesSource } from 'aurelia-path/interfaces';
+	import { Dictionary } from 'aurelia-tsutil';
+	import { HttpResponseMessage } from 'aurelia-http-client/http-response-message';
 	/**
 	* A builder class allowing fluent composition of HTTP requests.
 	*
@@ -116,10 +114,10 @@ declare module 'aurelia-http-client/request-builder' {
 	* @constructor
 	*/
 	export class RequestBuilder {
-	    client: any;
-	    transformers: any;
-	    useJsonp: any;
-	    constructor(client: any);
+	    client: HttpClient;
+	    transformers: IRequestMessageTransformer[];
+	    useJsonp: boolean;
+	    constructor(client: HttpClient);
 	    /**
 	    * Adds a user-defined request transformer to the RequestBuilder.
 	    *
@@ -128,14 +126,14 @@ declare module 'aurelia-http-client/request-builder' {
 	    * @param {Function} fn The helper function.
 	    * @chainable
 	    */
-	    static addHelper(name: any, fn: any): void;
+	    static addHelper(name: string, fn: (...args) => IRequestMessageTransformer): void;
 	    /**
 	    * Sends the request.
 	    *
 	    * @method send
 	    * @return {Promise} A cancellable promise object.
 	    */
-	    send(): any;
+	    send(): ICancellablePromise<HttpResponseMessage>;
 	    asDelete: () => RequestBuilder;
 	    asGet: () => RequestBuilder;
 	    asHead: () => RequestBuilder;
@@ -143,23 +141,26 @@ declare module 'aurelia-http-client/request-builder' {
 	    asPatch: () => RequestBuilder;
 	    asPost: () => RequestBuilder;
 	    asPut: () => RequestBuilder;
-	    asJsonp: () => RequestBuilder;
-	    withUrl: (url: any) => RequestBuilder;
+	    asJsonp: (callbackParameterName: string) => RequestBuilder;
+	    withUri: (uri: string) => RequestBuilder;
 	    withContent: (content: any) => RequestBuilder;
-	    withBaseUrl: (baseUrl: any) => RequestBuilder;
-	    withParams: (params: any) => RequestBuilder;
-	    withResponseType: (responseType: any) => RequestBuilder;
-	    withTimeout: (timeout: any) => RequestBuilder;
-	    withHeader: (key: any, value: any) => RequestBuilder;
-	    withCredentials: (value: any) => RequestBuilder;
-	    withReviver: (reviver: any) => RequestBuilder;
-	    withReplacer: (replacer: any) => RequestBuilder;
-	    withProgressCallback: (progressCallback: any) => RequestBuilder;
-	    withCallbackParameterName: (callbackParameterName: any) => RequestBuilder;
+	    withBaseUrl: (baseUrl: string) => RequestBuilder;
+	    withParams: (params: Dictionary<QueryStringValuesSource>) => RequestBuilder;
+	    withResponseType: (responseType: string) => RequestBuilder;
+	    withTimeout: (timeout: number) => RequestBuilder;
+	    withHeader: (key: string, value: string) => RequestBuilder;
+	    withCredentials: (value: boolean) => RequestBuilder;
+	    withReviver: (reviver: ResponseReviver) => RequestBuilder;
+	    withReplacer: (replacer: JSONContentReplacer) => RequestBuilder;
+	    withProgressCallback: (progressCallback: (ev: ProgressEvent) => any) => RequestBuilder;
+	    withCallbackParameterName: (callbackParameterName: string) => RequestBuilder;
 	}
 
 }
 declare module 'aurelia-http-client/http-client' {
+	import { IRequestMessageTransformer, IRequestMessage, ICancellablePromise } from 'aurelia-http-client/interfaces';
+	import { RequestMessageProcessor } from 'aurelia-http-client/request-message-processor';
+	import { HttpResponseMessage } from 'aurelia-http-client/http-response-message';
 	import { RequestBuilder } from 'aurelia-http-client/request-builder';
 	/**
 	* The main HTTP client object.
@@ -168,10 +169,10 @@ declare module 'aurelia-http-client/http-client' {
 	* @constructor
 	*/
 	export class HttpClient {
-	    requestTransformers: any;
-	    requestProcessorFactories: any;
-	    pendingRequests: any;
-	    isRequesting: any;
+	    requestTransformers: IRequestMessageTransformer[];
+	    requestProcessorFactories: Map<Function, () => RequestMessageProcessor>;
+	    pendingRequests: RequestMessageProcessor[];
+	    isRequesting: boolean;
 	    constructor();
 	    /**
 	     * Configure this HttpClient with default settings to be used by all requests.
@@ -180,7 +181,7 @@ declare module 'aurelia-http-client/http-client' {
 	     * @param {Function} fn A function that takes a RequestBuilder as an argument.
 	     * @chainable
 	     */
-	    configure(fn: any): HttpClient;
+	    configure(fn: (RequestBuilder) => void): HttpClient;
 	    /**
 	     * Returns a new RequestBuilder for this HttpClient instance that can be used to build and send HTTP requests.
 	     *
@@ -188,7 +189,7 @@ declare module 'aurelia-http-client/http-client' {
 	     * @param uri The target URI.
 	     * @type RequestBuilder
 	     */
-	    createRequest(uri: any): RequestBuilder;
+	    createRequest(uri: string): RequestBuilder;
 	    /**
 	     * Sends a message using the underlying networking stack.
 	     *
@@ -197,7 +198,7 @@ declare module 'aurelia-http-client/http-client' {
 	     * @param {Array} transformers A collection of transformers to apply to the HTTP request.
 	     * @return {Promise} A cancellable promise object.
 	     */
-	    send(message: any, transformers: any): any;
+	    send(message: IRequestMessage, transformers: IRequestMessageTransformer[]): ICancellablePromise<HttpResponseMessage>;
 	    /**
 	     * Sends an HTTP DELETE request.
 	     *
@@ -205,7 +206,7 @@ declare module 'aurelia-http-client/http-client' {
 	     * @param {String} uri The target URI.
 	     * @return {Promise} A cancellable promise object.
 	     */
-	    delete(uri: any): any;
+	    delete(uri: any): ICancellablePromise<HttpResponseMessage>;
 	    /**
 	     * Sends an HTTP GET request.
 	     *
@@ -213,7 +214,7 @@ declare module 'aurelia-http-client/http-client' {
 	     * @param {String} uri The target URI.
 	     * @return {Promise} A cancellable promise object.
 	     */
-	    get(uri: any): any;
+	    get(uri: any): ICancellablePromise<HttpResponseMessage>;
 	    /**
 	     * Sends an HTTP HEAD request.
 	     *
@@ -221,7 +222,7 @@ declare module 'aurelia-http-client/http-client' {
 	     * @param {String} uri The target URI.
 	     * @return {Promise} A cancellable promise object.
 	     */
-	    head(uri: any): any;
+	    head(uri: any): ICancellablePromise<HttpResponseMessage>;
 	    /**
 	     * Sends a JSONP request.
 	     *
@@ -229,7 +230,7 @@ declare module 'aurelia-http-client/http-client' {
 	     * @param {String} uri The target URI.
 	     * @return {Promise} A cancellable promise object.
 	     */
-	    jsonp(uri: any, callbackParameterName?: string): any;
+	    jsonp(uri: any, callbackParameterName?: string): ICancellablePromise<HttpResponseMessage>;
 	    /**
 	     * Sends an HTTP OPTIONS request.
 	     *
@@ -237,7 +238,7 @@ declare module 'aurelia-http-client/http-client' {
 	     * @param {String} uri The target URI.
 	     * @return {Promise} A cancellable promise object.
 	     */
-	    options(uri: any): any;
+	    options(uri: any): ICancellablePromise<HttpResponseMessage>;
 	    /**
 	     * Sends an HTTP PUT request.
 	     *
@@ -246,7 +247,7 @@ declare module 'aurelia-http-client/http-client' {
 	     * @param {Object} uri The request payload.
 	     * @return {Promise} A cancellable promise object.
 	     */
-	    put(uri: any, content: any): any;
+	    put(uri: any, content: any): ICancellablePromise<HttpResponseMessage>;
 	    /**
 	     * Sends an HTTP PATCH request.
 	     *
@@ -255,7 +256,7 @@ declare module 'aurelia-http-client/http-client' {
 	     * @param {Object} uri The request payload.
 	     * @return {Promise} A cancellable promise object.
 	     */
-	    patch(uri: any, content: any): any;
+	    patch(uri: any, content: any): ICancellablePromise<HttpResponseMessage>;
 	    /**
 	     * Sends an HTTP POST request.
 	     *
@@ -264,7 +265,95 @@ declare module 'aurelia-http-client/http-client' {
 	     * @param {Object} uri The request payload.
 	     * @return {Promise} A cancellable promise object.
 	     */
-	    post(uri: any, content: any): any;
+	    post(uri: any, content: any): ICancellablePromise<HttpResponseMessage>;
+	}
+
+}
+declare module 'aurelia-http-client/interfaces' {
+	import { HttpClient } from 'aurelia-http-client/http-client';
+	import { RequestMessageProcessor } from 'aurelia-http-client/request-message-processor';
+	import { QueryStringValuesSource } from 'aurelia-path/interfaces';
+	import { Dictionary } from 'aurelia-tsutil';
+	import { Headers } from 'aurelia-http-client/headers';
+	export interface ICancellablePromise<T> extends Promise<T> {
+	    abort(): any;
+	    cancel(): any;
+	}
+	export type JSONResponseReviver = (key: any, value: any) => any;
+	export type NonJSONResponseReviver = (response: any) => any;
+	export type ResponseReviver = JSONResponseReviver | NonJSONResponseReviver;
+	export type JSONContentReplacer = (key: string, value: any) => any;
+	export interface IHeaders {
+	    headers: Dictionary<string>;
+	}
+	export interface IRequestTransformer {
+	    (client: HttpClient, processor: RequestMessageProcessor, message: IRequestMessage, xhr: IXHR): void;
+	}
+	export interface IRequestMessageTransformer {
+	    (client: HttpClient, processor: RequestMessageProcessor, message: IRequestMessage): void;
+	}
+	export interface IRequestMessage {
+	    method: string;
+	    uri: string;
+	    headers: Headers;
+	    baseUri?: string;
+	    params?: Dictionary<QueryStringValuesSource>;
+	    content?: any;
+	    fullUri?: string;
+	    responseType?: string;
+	    reviver?: ResponseReviver;
+	    replacer?: JSONContentReplacer;
+	    timeout?: number;
+	    callbackParameterName?: string;
+	    withCredentials?: boolean;
+	    progressCallback?: (ev: ProgressEvent) => any;
+	}
+	export interface IXHRResponse {
+	    response: any;
+	    status: number;
+	    statusText: string;
+	    responseText?: string;
+	    getAllResponseHeaders?(): string;
+	}
+	export interface IXHRRequest {
+	    timeout?: number;
+	    callbackParameterName?: string;
+	    withCredentials?: boolean;
+	    upload?: XMLHttpRequestUpload;
+	    responseType?: string;
+	    setRequestHeader(header: string, value: string): void;
+	}
+	export interface IXHR extends IXHRResponse, IXHRRequest {
+	    abort(): void;
+	    open(method: string, url: string, async?: boolean): void;
+	    send(data?: string): void;
+	    onabort: (e: any) => any;
+	    onerror: (e: any) => any;
+	    onload: (e: any) => any;
+	    ontimeout: (e: any) => any;
+	}
+	export interface IXHRType {
+	    new (): IXHR;
+	}
+
+}
+declare module 'aurelia-http-client/headers' {
+	import { Dictionary } from 'aurelia-tsutil';
+	import { IHeaders, IXHRRequest } from 'aurelia-http-client/interfaces';
+	export class Headers implements IHeaders {
+	    headers: Dictionary<string>;
+	    constructor(headers?: Dictionary<string>);
+	    add(key: string, value: string): void;
+	    get(key: string): string;
+	    clear(): void;
+	    configureXHR(xhr: IXHRRequest): void;
+	    /**
+	     * XmlHttpRequest's getAllResponseHeaders() method returns a string of response
+	     * headers according to the format described here:
+	     * http://www.w3.org/TR/XMLHttpRequest/#the-getallresponseheaders-method
+	     * This method parses that string into a user-friendly key/value pair object.
+	     */
+	    static parse(headerStr: string): Headers;
 	}
 
 }

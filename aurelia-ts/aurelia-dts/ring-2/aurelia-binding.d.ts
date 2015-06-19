@@ -499,6 +499,10 @@ declare module 'aurelia-binding/value-converter' {
 	}
 
 }
+declare module 'aurelia-binding/map-observation' {
+	export function getMapObserver(taskQueue: any, map: any): any;
+
+}
 declare module 'aurelia-binding/property-observation' {
 	export class SetterObserver {
 	    taskQueue: any;

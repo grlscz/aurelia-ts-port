@@ -4,7 +4,7 @@ import {ModifyCollectionObserver} from './collection-observation';
 
 var mapProto = Map.prototype;
 
-export function getMapObserver(taskQueue, map){
+export function getMapObserver(taskQueue, map):any{
   return ModifyMapObserver.create(taskQueue, map);
 }
 

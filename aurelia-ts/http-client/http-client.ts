@@ -1,24 +1,28 @@
+import {IRequestMessageTransformer, IRequestMessage, ICancellablePromise} from './interfaces';
+import {RequestMessageProcessor} from './request-message-processor';
+import {HttpResponseMessage} from './http-response-message';
+
 import core from 'core-js';
 import {Headers} from './headers';
 import {RequestBuilder} from './request-builder';
-import {HttpRequestMessage,createHttpRequestMessageProcessor} from './http-request-message';
-import {JSONPRequestMessage,createJSONPRequestMessageProcessor} from './jsonp-request-message';
+import {HttpRequestMessage, createHttpRequestMessageProcessor} from './http-request-message';
+import {JSONPRequestMessage, createJSONPRequestMessageProcessor} from './jsonp-request-message';
 
-function trackRequestStart(client, processor){
-  client.pendingRequests.push(processor);
-  client.isRequesting = true;
+function trackRequestStart(client: HttpClient, processor: RequestMessageProcessor): void {
+    client.pendingRequests.push(processor);
+    client.isRequesting = true;
 }
 
-function trackRequestEnd(client, processor){
-  var index = client.pendingRequests.indexOf(processor);
+function trackRequestEnd(client: HttpClient, processor: RequestMessageProcessor): void {
+    var index = client.pendingRequests.indexOf(processor);
 
-  client.pendingRequests.splice(index, 1);
-  client.isRequesting = client.pendingRequests.length > 0;
+    client.pendingRequests.splice(index, 1);
+    client.isRequesting = client.pendingRequests.length > 0;
 
-  if(!client.isRequesting){
-    var evt = new (<any>window).CustomEvent('aurelia-http-client-requests-drained', { bubbles: true, cancelable: true });
-    setTimeout(() => document.dispatchEvent(evt), 1);
-  }
+    if (!client.isRequesting) {
+        var evt: CustomEvent = new (<any>window).CustomEvent('aurelia-http-client-requests-drained', { bubbles: true, cancelable: true });
+        setTimeout(() => document.dispatchEvent(evt), 1);
+    }
 }
 
 /**
@@ -28,178 +32,178 @@ function trackRequestEnd(client, processor){
 * @constructor
 */
 export class HttpClient {
-  public requestTransformers;
-  public requestProcessorFactories;
-  public pendingRequests;
-  public isRequesting;
-  constructor(){
-    this.requestTransformers = [];
-    this.requestProcessorFactories = new Map();
-    this.requestProcessorFactories.set(HttpRequestMessage, createHttpRequestMessageProcessor);
-    this.requestProcessorFactories.set(JSONPRequestMessage, createJSONPRequestMessageProcessor);
-    this.pendingRequests = [];
-    this.isRequesting = false;
-  }
-
-  /**
-   * Configure this HttpClient with default settings to be used by all requests.
-   *
-   * @method configure
-   * @param {Function} fn A function that takes a RequestBuilder as an argument.
-   * @chainable
-   */
-  configure(fn){
-    var builder = new RequestBuilder(this);
-    fn(builder);
-    this.requestTransformers = (<any>builder).transformers;
-    return this;
-  }
-
-  /**
-   * Returns a new RequestBuilder for this HttpClient instance that can be used to build and send HTTP requests.
-   *
-   * @method createRequest
-   * @param uri The target URI.
-   * @type RequestBuilder
-   */
-  createRequest(uri){
-    let builder = new RequestBuilder(this);
-
-    if(uri) {
-      (<any>builder).withUri(uri);
+    public requestTransformers: IRequestMessageTransformer[];
+    public requestProcessorFactories: Map<Function, () => RequestMessageProcessor>;
+    public pendingRequests: RequestMessageProcessor[];
+    public isRequesting: boolean;
+    constructor() {
+        this.requestTransformers = [];
+        this.requestProcessorFactories = new Map<Function, () => RequestMessageProcessor>();
+        this.requestProcessorFactories.set(HttpRequestMessage, createHttpRequestMessageProcessor);
+        this.requestProcessorFactories.set(JSONPRequestMessage, createJSONPRequestMessageProcessor);
+        this.pendingRequests = [];
+        this.isRequesting = false;
     }
 
-    return builder;
-  }
-
-  /**
-   * Sends a message using the underlying networking stack.
-   *
-   * @method send
-   * @param message A configured HttpRequestMessage or JSONPRequestMessage.
-   * @param {Array} transformers A collection of transformers to apply to the HTTP request.
-   * @return {Promise} A cancellable promise object.
-   */
-  send(message, transformers){
-    var createProcessor = this.requestProcessorFactories.get(message.constructor),
-        processor, promise, i, ii;
-
-    if(!createProcessor){
-      throw new Error(`No request message processor factory for ${message.constructor}.`);
+    /**
+     * Configure this HttpClient with default settings to be used by all requests.
+     *
+     * @method configure
+     * @param {Function} fn A function that takes a RequestBuilder as an argument.
+     * @chainable
+     */
+    configure(fn: (RequestBuilder) => void): HttpClient {
+        var builder = new RequestBuilder(this);
+        fn(builder);
+        this.requestTransformers = builder.transformers;
+        return this;
     }
 
-    processor = createProcessor();
-    trackRequestStart(this, processor);
+    /**
+     * Returns a new RequestBuilder for this HttpClient instance that can be used to build and send HTTP requests.
+     *
+     * @method createRequest
+     * @param uri The target URI.
+     * @type RequestBuilder
+     */
+    createRequest(uri: string): RequestBuilder {
+        let builder = new RequestBuilder(this);
 
-    transformers = transformers || this.requestTransformers;
+        if (uri) {
+            builder.withUri(uri);
+        }
 
-    for(i = 0, ii = transformers.length; i < ii; ++i){
-      transformers[i](this, processor, message);
+        return builder;
     }
 
-    promise = processor.process(this, message).then(response => {
-      trackRequestEnd(this, processor);
-      return response;
-    }).catch(response => {
-      trackRequestEnd(this, processor);
-      throw response;
-    });
+    /**
+     * Sends a message using the underlying networking stack.
+     *
+     * @method send
+     * @param message A configured HttpRequestMessage or JSONPRequestMessage.
+     * @param {Array} transformers A collection of transformers to apply to the HTTP request.
+     * @return {Promise} A cancellable promise object.
+     */
+    send(message: IRequestMessage, transformers: IRequestMessageTransformer[]): ICancellablePromise<HttpResponseMessage> {
+        var createProcessor = this.requestProcessorFactories.get(message.constructor),
+            processor: RequestMessageProcessor, promise: ICancellablePromise<HttpResponseMessage>, i: number, ii: number;
 
-    promise.abort = promise.cancel = function() {
-      processor.abort();
-    };
+        if (!createProcessor) {
+            throw new Error(`No request message processor factory for ${message.constructor}.`);
+        }
 
-    return promise;
-  }
+        processor = createProcessor();
+        trackRequestStart(this, processor);
 
-  /**
-   * Sends an HTTP DELETE request.
-   *
-   * @method delete
-   * @param {String} uri The target URI.
-   * @return {Promise} A cancellable promise object.
-   */
-  delete(uri){
-    return (<any>this.createRequest(uri)).asDelete().send();
-  }
+        transformers = transformers || this.requestTransformers;
 
-  /**
-   * Sends an HTTP GET request.
-   *
-   * @method get
-   * @param {String} uri The target URI.
-   * @return {Promise} A cancellable promise object.
-   */
-  get(uri){
-    return (<any>this.createRequest(uri)).asGet().send();
-  }
+        for (i = 0, ii = transformers.length; i < ii; ++i) {
+            transformers[i](this, processor, message);
+        }
 
-  /**
-   * Sends an HTTP HEAD request.
-   *
-   * @method head
-   * @param {String} uri The target URI.
-   * @return {Promise} A cancellable promise object.
-   */
-  head(uri){
-    return (<any>this.createRequest(uri)).asHead().send();
-  }
+        promise = <ICancellablePromise<HttpResponseMessage>>processor.process(this, message).then(response => {
+            trackRequestEnd(this, processor);
+            return response;
+        }).catch((response): any => {
+            trackRequestEnd(this, processor);
+            throw response;
+        });
 
-  /**
-   * Sends a JSONP request.
-   *
-   * @method jsonp
-   * @param {String} uri The target URI.
-   * @return {Promise} A cancellable promise object.
-   */
-  jsonp(uri, callbackParameterName='jsoncallback'){
-    return (<any>this.createRequest(uri)).asJsonp(callbackParameterName).send();
-  }
+        promise.abort = promise.cancel = function () {
+            processor.abort();
+        };
 
-  /**
-   * Sends an HTTP OPTIONS request.
-   *
-   * @method options
-   * @param {String} uri The target URI.
-   * @return {Promise} A cancellable promise object.
-   */
-  options(uri){
-    return (<any>this.createRequest(uri)).asOptions().send();
-  }
+        return promise;
+    }
 
-  /**
-   * Sends an HTTP PUT request.
-   *
-   * @method put
-   * @param {String} uri The target URI.
-   * @param {Object} uri The request payload.
-   * @return {Promise} A cancellable promise object.
-   */
-  put(uri, content){
-    return (<any>this.createRequest(uri)).asPut().withContent(content).send();
-  }
+    /**
+     * Sends an HTTP DELETE request.
+     *
+     * @method delete
+     * @param {String} uri The target URI.
+     * @return {Promise} A cancellable promise object.
+     */
+    delete(uri): ICancellablePromise<HttpResponseMessage> {
+        return this.createRequest(uri).asDelete().send();
+    }
 
-  /**
-   * Sends an HTTP PATCH request.
-   *
-   * @method patch
-   * @param {String} uri The target URI.
-   * @param {Object} uri The request payload.
-   * @return {Promise} A cancellable promise object.
-   */
-  patch(uri, content){
-    return (<any>this.createRequest(uri)).asPatch().withContent(content).send();
-  }
+    /**
+     * Sends an HTTP GET request.
+     *
+     * @method get
+     * @param {String} uri The target URI.
+     * @return {Promise} A cancellable promise object.
+     */
+    get(uri): ICancellablePromise<HttpResponseMessage> {
+        return this.createRequest(uri).asGet().send();
+    }
 
-  /**
-   * Sends an HTTP POST request.
-   *
-   * @method post
-   * @param {String} uri The target URI.
-   * @param {Object} uri The request payload.
-   * @return {Promise} A cancellable promise object.
-   */
-  post(uri, content){
-    return (<any>this.createRequest(uri)).asPost().withContent(content).send();
-  }
+    /**
+     * Sends an HTTP HEAD request.
+     *
+     * @method head
+     * @param {String} uri The target URI.
+     * @return {Promise} A cancellable promise object.
+     */
+    head(uri): ICancellablePromise<HttpResponseMessage> {
+        return this.createRequest(uri).asHead().send();
+    }
+
+    /**
+     * Sends a JSONP request.
+     *
+     * @method jsonp
+     * @param {String} uri The target URI.
+     * @return {Promise} A cancellable promise object.
+     */
+    jsonp(uri, callbackParameterName = 'jsoncallback'): ICancellablePromise<HttpResponseMessage> {
+        return this.createRequest(uri).asJsonp(callbackParameterName).send();
+    }
+
+    /**
+     * Sends an HTTP OPTIONS request.
+     *
+     * @method options
+     * @param {String} uri The target URI.
+     * @return {Promise} A cancellable promise object.
+     */
+    options(uri): ICancellablePromise<HttpResponseMessage> {
+        return this.createRequest(uri).asOptions().send();
+    }
+
+    /**
+     * Sends an HTTP PUT request.
+     *
+     * @method put
+     * @param {String} uri The target URI.
+     * @param {Object} uri The request payload.
+     * @return {Promise} A cancellable promise object.
+     */
+    put(uri, content): ICancellablePromise<HttpResponseMessage> {
+        return this.createRequest(uri).asPut().withContent(content).send();
+    }
+
+    /**
+     * Sends an HTTP PATCH request.
+     *
+     * @method patch
+     * @param {String} uri The target URI.
+     * @param {Object} uri The request payload.
+     * @return {Promise} A cancellable promise object.
+     */
+    patch(uri, content): ICancellablePromise<HttpResponseMessage> {
+        return this.createRequest(uri).asPatch().withContent(content).send();
+    }
+
+    /**
+     * Sends an HTTP POST request.
+     *
+     * @method post
+     * @param {String} uri The target URI.
+     * @param {Object} uri The request payload.
+     * @return {Promise} A cancellable promise object.
+     */
+    post(uri, content): ICancellablePromise<HttpResponseMessage> {
+        return this.createRequest(uri).asPost().withContent(content).send();
+    }
 }
