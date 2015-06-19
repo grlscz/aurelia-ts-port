@@ -1,4 +1,39 @@
+declare module 'aurelia-logging/interfaces' {
+	export const enum LogLevel {
+	    none = 0,
+	    error = 1,
+	    warn = 2,
+	    info = 3,
+	    debug = 4,
+	}
+	export interface ILoggerMedthod {
+	    (message: string, ...rest: any[]): void;
+	}
+	export interface ILogger {
+	    id: string;
+	    debug: ILoggerMedthod;
+	    info: ILoggerMedthod;
+	    warn: ILoggerMedthod;
+	    error: ILoggerMedthod;
+	}
+	export interface IAppenderMedthod {
+	    (logger: ILogger, message: string, ...rest: any[]): void;
+	}
+	export interface IAppender {
+	    debug: IAppenderMedthod;
+	    info: IAppenderMedthod;
+	    warn: IAppenderMedthod;
+	    error: IAppenderMedthod;
+	}
+	export interface IError extends Error {
+	    innerError?: Error;
+	    stack?: string;
+	}
+
+}
 declare module 'aurelia-logging/index' {
+	import { LogLevel, ILogger, IAppender, IError } from 'aurelia-logging/interfaces';
+	export { LogLevel, ILogger, IAppender, IError } from 'aurelia-logging/interfaces';
 	/**
 	 * This library is part of the Aurelia platform and contains a minimal but effective logging mechanism
 	 * with support for log levels and pluggable log appenders.
@@ -11,7 +46,7 @@ declare module 'aurelia-logging/index' {
 	* @class AggregateError
 	* @constructor
 	*/
-	export function AggregateError(msg: any, inner: any, skipIfAlreadyAggregate?: any): any;
+	export function AggregateError(msg: string, inner: IError, skipIfAlreadyAggregate?: boolean): IError;
 	/**
 	* Enum specifying the levels of the logger
 	*
@@ -20,11 +55,11 @@ declare module 'aurelia-logging/index' {
 	* @for export
 	*/
 	export var levels: {
-	    none: number;
-	    error: number;
-	    warn: number;
-	    info: number;
-	    debug: number;
+	    none: LogLevel;
+	    error: LogLevel;
+	    warn: LogLevel;
+	    info: LogLevel;
+	    debug: LogLevel;
 	};
 	/**
 	* Gets an instance of a logger by the Id used when creating.
@@ -34,7 +69,7 @@ declare module 'aurelia-logging/index' {
 	* @return {Logger} The instance of the logger, or creates a new logger if none exists for that Id.
 	* @for export
 	*/
-	export function getLogger(id: any): any;
+	export function getLogger(id: string): ILogger;
 	/**
 	 * Adds an appender capable of processing logs and channeling them to an output.
 	 *
@@ -42,7 +77,7 @@ declare module 'aurelia-logging/index' {
 	 * @param {Object} appender An appender instance to begin processing logs with.
 	 * @for export
 	 */
-	export function addAppender(appender: any): void;
+	export function addAppender(appender: IAppender): void;
 	/**
 	* Sets the level of the logging for the application loggers
 	*
@@ -50,7 +85,7 @@ declare module 'aurelia-logging/index' {
 	* @param {Number} level Matches an enum specifying the level of logging.
 	* @for export
 	*/
-	export function setLevel(level: any): void;
+	export function setLevel(level: LogLevel): void;
 	/**
 	* The logger is essentially responsible for having log statements that appear during debugging but are squelched
 	* when using the build tools, depending on the log level that is set.  The available levels are -
@@ -65,7 +100,7 @@ declare module 'aurelia-logging/index' {
 	* @class Logger
 	* @constructor
 	*/
-	export class Logger {
+	export class Logger implements ILogger {
 	    id: any;
 	    constructor(id: any, key: any);
 	    /**

@@ -1,3 +1,7 @@
+import {LogLevel, ILogger, IAppender, IAppenderMedthod, IError} from './interfaces';
+export {LogLevel, ILogger, IAppender, IError} from './interfaces';
+import {Dictionary} from 'aurelia-tsutil';
+
 /**
  * This library is part of the Aurelia platform and contains a minimal but effective logging mechanism
  * with support for log levels and pluggable log appenders.
@@ -5,112 +9,112 @@
  * @module logging
  */
 
- /**
- * Creates an instance of Error that aggregates and preserves an innerError.
- *
- * @class AggregateError
- * @constructor
- */
- export function AggregateError(msg, inner, skipIfAlreadyAggregate?) {
-  if(inner){
-    if(inner.innerError && skipIfAlreadyAggregate){
-      return inner;
+/**
+* Creates an instance of Error that aggregates and preserves an innerError.
+*
+* @class AggregateError
+* @constructor
+*/
+export function AggregateError(msg: string, inner: IError, skipIfAlreadyAggregate?: boolean): IError {
+    if (inner) {
+        if (inner.innerError && skipIfAlreadyAggregate) {
+            return inner;
+        }
+
+        if (inner.stack) {
+            msg += `\n------------------------------------------------\ninner error: ${inner.stack}`;
+        }
     }
 
-    if(inner.stack) {
-      msg += `\n------------------------------------------------\ninner error: ${inner.stack}`;
+    var err: IError = new Error(msg);
+    if (inner) {
+        err.innerError = inner;
     }
-  }
 
-  var err:any = new Error(msg);
-  if (inner) {
-    err.innerError = inner;
-  }
-
-  return err;
+    return err;
 }
 
- /**
- * Enum specifying the levels of the logger
- *
- * @property levels
- * @type Enum
- * @for export
- */
+/**
+* Enum specifying the levels of the logger
+*
+* @property levels
+* @type Enum
+* @for export
+*/
 export var levels = {
-  none: 0,
-  error:1,
-  warn:2,
-  info:3,
-  debug:4
+    none: <LogLevel>0,
+    error: <LogLevel>1,
+    warn: <LogLevel>2,
+    info: <LogLevel>3,
+    debug: <LogLevel>4
 };
 
-var loggers = {},
-    logLevel = levels.none,
-    appenders = [],
+var loggers: Dictionary<ILogger> = {},
+    logLevel: LogLevel = levels.none,
+    appenders: IAppender[] = [],
     slice = Array.prototype.slice,
     loggerConstructionKey = {};
 
-function log(logger, level, args){
-  var i = appenders.length,
-          current;
+function log(logger: ILogger, level: string, args) {
+    var i = appenders.length,
+        current: IAppender;
 
-  args = slice.call(args);
-  args.unshift(logger);
+    args = slice.call(args);
+    args.unshift(logger);
 
-  while(i--) {
-    current = appenders[i];
-    current[level].apply(current, args);
-  }
+    while (i--) {
+        current = appenders[i];
+        (<IAppenderMedthod>current[level]).apply(current, args);
+    }
 }
 
-function debug(){
-  if(logLevel < 4){
-    return;
-  }
+function debug() {
+    if (logLevel < <LogLevel>4) {
+        return;
+    }
 
-  log(this, 'debug', arguments);
+    log(this, 'debug', arguments);
 }
 
-function info(){
-  if(logLevel < 3){
-    return;
-  }
+function info() {
+    if (logLevel < <LogLevel>3) {
+        return;
+    }
 
-  log(this, 'info', arguments);
+    log(this, 'info', arguments);
 }
 
-function warn(){
-  if(logLevel < 2){
-    return;
-  }
+function warn() {
+    if (logLevel < <LogLevel>2) {
+        return;
+    }
 
-  log(this, 'warn', arguments);
+    log(this, 'warn', arguments);
 }
 
-function error(){
-  if(logLevel < 1){
-    return;
-  }
+function error() {
+    if (logLevel < <LogLevel>1) {
+        return;
+    }
 
-  log(this, 'error', arguments);
+    log(this, 'error', arguments);
 }
 
-function connectLogger(logger){
-  logger.debug = debug;
-  logger.info = info;
-  logger.warn = warn;
-  logger.error = error;
+function connectLogger(logger: ILogger) {
+    logger.debug = debug;
+    logger.info = info;
+    logger.warn = warn;
+    logger.error = error;
 }
 
-function createLogger(id){
-  var logger = new Logger(id, loggerConstructionKey);
+function createLogger(id: string): ILogger {
+    var logger = new Logger(id, loggerConstructionKey);
 
-  if(appenders.length) {
-    connectLogger(logger);
-  }
+    if (appenders.length) {
+        connectLogger(logger);
+    }
 
-  return logger;
+    return logger;
 }
 
 ﻿/**
@@ -121,8 +125,8 @@ function createLogger(id){
  * @return {Logger} The instance of the logger, or creates a new logger if none exists for that Id.
  * @for export
  */
-export function getLogger(id){
-  return loggers[id] || (loggers[id] = createLogger(id));
+export function getLogger(id: string): ILogger {
+    return loggers[id] || (loggers[id] = createLogger(id));
 }
 
 /**
@@ -132,14 +136,14 @@ export function getLogger(id){
  * @param {Object} appender An appender instance to begin processing logs with.
  * @for export
  */
-export function addAppender(appender){
-  appenders.push(appender);
+export function addAppender(appender: IAppender) {
+    appenders.push(appender);
 
-  if(appenders.length === 1){
-    for(var key in loggers){
-      connectLogger(loggers[key]);
+    if (appenders.length === 1) {
+        for (var key in loggers) {
+            connectLogger(loggers[key]);
+        }
     }
-  }
 }
 
 ﻿/**
@@ -149,8 +153,8 @@ export function addAppender(appender){
  * @param {Number} level Matches an enum specifying the level of logging.
  * @for export
  */
-export function setLevel(level){
-  logLevel = level;
+export function setLevel(level: LogLevel) {
+    logLevel = level;
 }
 
 /**
@@ -167,45 +171,45 @@ export function setLevel(level){
 * @class Logger
 * @constructor
 */
-export class Logger {
-  public id;
-  constructor(id, key){
-    if(key !== loggerConstructionKey){
-      throw new Error('You cannot instantiate "Logger". Use the "getLogger" API instead.');
+export class Logger implements ILogger {
+    public id;
+    constructor(id, key) {
+        if (key !== loggerConstructionKey) {
+            throw new Error('You cannot instantiate "Logger". Use the "getLogger" API instead.');
+        }
+
+        this.id = id;
     }
 
-    this.id = id;
-  }
+    /**
+     * Logs a debug message.
+     *
+     * @method debug
+     * @param {string} message The message to log
+     */
+    debug() { }
 
-  /**
-   * Logs a debug message.
-   *
-   * @method debug
-   * @param {string} message The message to log
-   */
-  debug(){}
+    /**
+     * Logs info.
+     *
+     * @method info
+     * @param {string} message The message to log
+     */
+    info() { }
 
-  /**
-   * Logs info.
-   *
-   * @method info
-   * @param {string} message The message to log
-   */
-  info(){}
+    /**
+     * Logs a warning.
+     *
+     * @method warn
+     * @param {string} message The message to log
+     */
+    warn() { }
 
-  /**
-   * Logs a warning.
-   *
-   * @method warn
-   * @param {string} message The message to log
-   */
-  warn(){}
-
-  /**
-   * Logs an error.
-   *
-   * @method error
-   * @param {string} message The message to log
-   */
-  error(){}
+    /**
+     * Logs an error.
+     *
+     * @method error
+     * @param {string} message The message to log
+     */
+    error() { }
 }

@@ -1,10 +1,11 @@
 declare module 'aurelia-logging-console/index' {
-	export class ConsoleAppender {
+	import { ILogger, IAppender } from 'aurelia-logging';
+	export class ConsoleAppender implements IAppender {
 	    constructor();
-	    debug(logger: any, message: any, ...rest: any[]): void;
-	    info(logger: any, message: any, ...rest: any[]): void;
-	    warn(logger: any, message: any, ...rest: any[]): void;
-	    error(logger: any, message: any, ...rest: any[]): void;
+	    debug(logger: ILogger, message: string, ...rest: any[]): void;
+	    info(logger: ILogger, message: string, ...rest: any[]): void;
+	    warn(logger: ILogger, message: string, ...rest: any[]): void;
+	    error(logger: ILogger, message: string, ...rest: any[]): void;
 	}
 
 }
