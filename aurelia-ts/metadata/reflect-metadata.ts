@@ -7,9 +7,9 @@ var _Set = Set;
 var _WeakMap = WeakMap;
 
 // [[Metadata]] internal slot
-var __Metadata__ = new _WeakMap();
+var __Metadata__ = new _WeakMap<Object, Map<string | symbol, Map<any, any>>>();
 
-function decorate(decorators, target, targetKey, targetDescriptor) {
+function decorate(decorators: (ClassDecorator | PropertyDecorator | MethodDecorator)[], target: Object | Function, targetKey: string | symbol, targetDescriptor: PropertyDescriptor): Function | PropertyDescriptor {
     if (!IsUndefined(targetDescriptor)) {
         if (!IsArray(decorators)) {
             throw new TypeError();
@@ -24,7 +24,7 @@ function decorate(decorators, target, targetKey, targetDescriptor) {
             throw new TypeError();
         }
         targetKey = ToPropertyKey(targetKey);
-        return DecoratePropertyWithDescriptor(decorators, target, targetKey, targetDescriptor);
+        return DecoratePropertyWithDescriptor(<MethodDecorator[]>decorators, <Object>target, targetKey, targetDescriptor);
     }
     else if (!IsUndefined(targetKey)) {
         if (!IsArray(decorators)) {
@@ -34,7 +34,7 @@ function decorate(decorators, target, targetKey, targetDescriptor) {
             throw new TypeError();
         }
         targetKey = ToPropertyKey(targetKey);
-        return DecoratePropertyWithoutDescriptor(decorators, target, targetKey);
+        return DecoratePropertyWithoutDescriptor(<PropertyDecorator[]>decorators, <Object>target, targetKey);
     }
     else {
         if (!IsArray(decorators)) {
@@ -43,32 +43,32 @@ function decorate(decorators, target, targetKey, targetDescriptor) {
         else if (!IsConstructor(target)) {
             throw new TypeError();
         }
-        return DecorateConstructor(decorators, target);
+        return DecorateConstructor(<ClassDecorator[]>decorators, <Function>target);
     }
 }
-(<any>Reflect).decorate = decorate;
+Reflect.decorate = <typeof Reflect.decorate>decorate;
 
-function metadata(metadataKey, metadataValue) {
-    function decorator(target, targetKey) {
+function metadata(metadataKey: any, metadataValue: any): ClassDecorator | MethodDecorator | PropertyDecorator {
+    function decorator(target: Object | Function, targetKey: string | symbol) {
         if (!IsUndefined(targetKey)) {
             if (!IsObject(target)) {
                 throw new TypeError();
             }
             targetKey = ToPropertyKey(targetKey);
-            OrdinaryDefineOwnMetadata(metadataKey, metadataValue, target, targetKey);
+            OrdinaryDefineOwnMetadata(metadataKey, metadataValue, <Object>target, targetKey);
         }
         else {
             if (!IsConstructor(target)) {
                 throw new TypeError();
             }
-            OrdinaryDefineOwnMetadata(metadataKey, metadataValue, target, undefined);
+            OrdinaryDefineOwnMetadata(metadataKey, metadataValue, <Function>target, undefined);
         }
     }
     return decorator;
 }
 Reflect.metadata = metadata;
 
-function defineMetadata(metadataKey, metadataValue, target, targetKey) {
+function defineMetadata(metadataKey: any, metadataValue: any, target: Object, targetKey: string | symbol) {
     if (!IsObject(target)) {
         throw new TypeError();
     }
@@ -77,9 +77,9 @@ function defineMetadata(metadataKey, metadataValue, target, targetKey) {
     }
     return OrdinaryDefineOwnMetadata(metadataKey, metadataValue, target, targetKey);
 }
-(<any>Reflect).defineMetadata = defineMetadata;
+Reflect.defineMetadata = <typeof Reflect.defineMetadata>defineMetadata;
 
-function hasMetadata(metadataKey, target, targetKey) {
+function hasMetadata(metadataKey: any, target: Object, targetKey: string | symbol) {
     if (!IsObject(target)) {
         throw new TypeError();
     }
@@ -88,9 +88,9 @@ function hasMetadata(metadataKey, target, targetKey) {
     }
     return OrdinaryHasMetadata(metadataKey, target, targetKey);
 }
-(<any>Reflect).hasMetadata = hasMetadata;
+Reflect.hasMetadata = <typeof Reflect.hasMetadata>hasMetadata;
 
-function hasOwnMetadata(metadataKey, target, targetKey) {
+function hasOwnMetadata(metadataKey: any, target: Object, targetKey: string | symbol) {
     if (!IsObject(target)) {
         throw new TypeError();
     }
@@ -99,9 +99,9 @@ function hasOwnMetadata(metadataKey, target, targetKey) {
     }
     return OrdinaryHasOwnMetadata(metadataKey, target, targetKey);
 }
-(<any>Reflect).hasOwnMetadata = hasOwnMetadata;
+Reflect.hasOwnMetadata = <typeof Reflect.hasOwnMetadata>hasOwnMetadata;
 
-function getMetadata(metadataKey, target, targetKey) {
+function getMetadata(metadataKey: any, target: Object, targetKey: string | symbol): any {
     if (!IsObject(target)) {
         throw new TypeError();
     }
@@ -110,9 +110,9 @@ function getMetadata(metadataKey, target, targetKey) {
     }
     return OrdinaryGetMetadata(metadataKey, target, targetKey);
 }
-(<any>Reflect).getMetadata = getMetadata;
+Reflect.getMetadata = <typeof Reflect.getMetadata>getMetadata;
 
-function getOwnMetadata(metadataKey, target, targetKey) {
+function getOwnMetadata(metadataKey: any, target: Object, targetKey: string | symbol): any {
     if (!IsObject(target)) {
         throw new TypeError();
     }
@@ -121,9 +121,9 @@ function getOwnMetadata(metadataKey, target, targetKey) {
     }
     return OrdinaryGetOwnMetadata(metadataKey, target, targetKey);
 }
-(<any>Reflect).getOwnMetadata = getOwnMetadata;
+Reflect.getOwnMetadata = <typeof Reflect.getOwnMetadata>getOwnMetadata;
 
-function getMetadataKeys(target, targetKey) {
+function getMetadataKeys(target: Object, targetKey: string | symbol): any[] {
     if (!IsObject(target)) {
         throw new TypeError();
     }
@@ -132,9 +132,9 @@ function getMetadataKeys(target, targetKey) {
     }
     return OrdinaryMetadataKeys(target, targetKey);
 }
-(<any>Reflect).getMetadataKeys = getMetadataKeys;
+Reflect.getMetadataKeys = <typeof Reflect.getMetadataKeys>getMetadataKeys;
 
-function getOwnMetadataKeys(target, targetKey) {
+function getOwnMetadataKeys(target: Object, targetKey: string | symbol): any[] {
     if (!IsObject(target)) {
         throw new TypeError();
     }
@@ -143,9 +143,9 @@ function getOwnMetadataKeys(target, targetKey) {
     }
     return OrdinaryOwnMetadataKeys(target, targetKey);
 }
-(<any>Reflect).getOwnMetadataKeys = getOwnMetadataKeys;
+Reflect.getOwnMetadataKeys = <typeof Reflect.getOwnMetadataKeys>getOwnMetadataKeys;
 
-function deleteMetadata(metadataKey, target, targetKey) {
+function deleteMetadata(metadataKey: any, target: Object, targetKey: string | symbol): boolean {
     if (!IsObject(target)) {
         throw new TypeError();
     }
@@ -163,7 +163,7 @@ function deleteMetadata(metadataKey, target, targetKey) {
     if (metadataMap.size > 0) {
         return true;
     }
-    var targetMetadata:any = __Metadata__.get(target);
+    var targetMetadata: any = __Metadata__.get(target);
     targetMetadata.delete(targetKey);
     if (targetMetadata.size > 0) {
         return true;
@@ -173,7 +173,7 @@ function deleteMetadata(metadataKey, target, targetKey) {
 }
 (<any>Reflect).deleteMetadata = deleteMetadata;
 
-function DecorateConstructor(decorators, target) {
+function DecorateConstructor(decorators: ClassDecorator[], target: Function): Function {
     for (var i = decorators.length - 1; i >= 0; --i) {
         var decorator = decorators[i];
         var decorated = decorator(target);
@@ -181,12 +181,12 @@ function DecorateConstructor(decorators, target) {
             if (!IsConstructor(decorated)) {
                 throw new TypeError();
             }
-            target = decorated;
+            target = <Function>decorated;
         }
     }
     return target;
 }
-function DecoratePropertyWithDescriptor(decorators, target, propertyKey, descriptor) {
+function DecoratePropertyWithDescriptor(decorators: MethodDecorator[], target: Object, propertyKey: string | symbol, descriptor: PropertyDescriptor): PropertyDescriptor {
     for (var i = decorators.length - 1; i >= 0; --i) {
         var decorator = decorators[i];
         var decorated = decorator(target, propertyKey, descriptor);
@@ -194,39 +194,39 @@ function DecoratePropertyWithDescriptor(decorators, target, propertyKey, descrip
             if (!IsObject(decorated)) {
                 throw new TypeError();
             }
-            descriptor = decorated;
+            descriptor = <PropertyDescriptor>decorated;
         }
     }
     return descriptor;
 }
-function DecoratePropertyWithoutDescriptor(decorators, target, propertyKey) {
+function DecoratePropertyWithoutDescriptor(decorators: PropertyDecorator[], target: Object, propertyKey: string | symbol): any {
     for (var i = decorators.length - 1; i >= 0; --i) {
         var decorator = decorators[i];
         decorator(target, propertyKey);
     }
 }
 // https://github.com/jonathandturner/decorators/blob/master/specs/metadata.md#getorcreatemetadatamap--o-p-create-
-function GetOrCreateMetadataMap(target, targetKey, create) {
-    var targetMetadata:any = __Metadata__.get(target);
+function GetOrCreateMetadataMap(target: Object, targetKey: string | symbol, create: boolean): Map<any, any> {
+    var targetMetadata: Map<string | symbol, Map<any, any>> = __Metadata__.get(target);
     if (!targetMetadata) {
         if (!create) {
             return undefined;
         }
-        targetMetadata = new _Map();
+        targetMetadata = new _Map<string | symbol, Map<any, any>>();
         __Metadata__.set(target, targetMetadata);
     }
-    var keyMetadata = targetMetadata.get(targetKey);
+    var keyMetadata: Map<any, any> = targetMetadata.get(targetKey);
     if (!keyMetadata) {
         if (!create) {
             return undefined;
         }
-        keyMetadata = new _Map();
+        keyMetadata = new _Map<any, any>();
         targetMetadata.set(targetKey, keyMetadata);
     }
     return keyMetadata;
 }
 // https://github.com/jonathandturner/decorators/blob/master/specs/metadata.md#ordinaryhasmetadata--metadatakey-o-p-
-function OrdinaryHasMetadata(MetadataKey, O, P) {
+function OrdinaryHasMetadata(MetadataKey: any, O: Object, P: string | symbol): boolean {
     var hasOwn = OrdinaryHasOwnMetadata(MetadataKey, O, P);
     if (hasOwn) {
         return true;
@@ -238,7 +238,7 @@ function OrdinaryHasMetadata(MetadataKey, O, P) {
     return false;
 }
 // https://github.com/jonathandturner/decorators/blob/master/specs/metadata.md#ordinaryhasownmetadata--metadatakey-o-p-
-function OrdinaryHasOwnMetadata(MetadataKey, O, P) {
+function OrdinaryHasOwnMetadata(MetadataKey: any, O: Object, P: string | symbol): boolean {
     var metadataMap = GetOrCreateMetadataMap(O, P, false);
     if (metadataMap === undefined) {
         return false;
@@ -246,7 +246,7 @@ function OrdinaryHasOwnMetadata(MetadataKey, O, P) {
     return Boolean(metadataMap.has(MetadataKey));
 }
 // https://github.com/jonathandturner/decorators/blob/master/specs/metadata.md#ordinarygetmetadata--metadatakey-o-p-
-function OrdinaryGetMetadata(MetadataKey, O, P) {
+function OrdinaryGetMetadata(MetadataKey: any, O: Object, P: string | symbol): any {
     var hasOwn = OrdinaryHasOwnMetadata(MetadataKey, O, P);
     if (hasOwn) {
         return OrdinaryGetOwnMetadata(MetadataKey, O, P);
@@ -258,7 +258,7 @@ function OrdinaryGetMetadata(MetadataKey, O, P) {
     return undefined;
 }
 // https://github.com/jonathandturner/decorators/blob/master/specs/metadata.md#ordinarygetownmetadata--metadatakey-o-p-
-function OrdinaryGetOwnMetadata(MetadataKey, O, P) {
+function OrdinaryGetOwnMetadata(MetadataKey: any, O: Object, P: string | symbol): any {
     var metadataMap = GetOrCreateMetadataMap(O, P, false);
     if (metadataMap === undefined) {
         return undefined;
@@ -266,26 +266,26 @@ function OrdinaryGetOwnMetadata(MetadataKey, O, P) {
     return metadataMap.get(MetadataKey);
 }
 // https://github.com/jonathandturner/decorators/blob/master/specs/metadata.md#ordinarydefineownmetadata--metadatakey-metadatavalue-o-p-
-function OrdinaryDefineOwnMetadata(MetadataKey, MetadataValue, O, P) {
+function OrdinaryDefineOwnMetadata(MetadataKey: any, MetadataValue: any, O: Object | Function, P: string | symbol): void {
     var metadataMap = GetOrCreateMetadataMap(O, P, true);
     metadataMap.set(MetadataKey, MetadataValue);
 }
 // https://github.com/jonathandturner/decorators/blob/master/specs/metadata.md#ordinarymetadatakeys--o-p-
-function OrdinaryMetadataKeys(O, P) {
-    var ownKeys = OrdinaryOwnMetadataKeys(O, P);
+function OrdinaryMetadataKeys(O: Object, P: string | symbol): any[] {
+    var ownKeys: any[] = OrdinaryOwnMetadataKeys(O, P);
     var parent = GetPrototypeOf(O);
     if (parent === null) {
         return ownKeys;
     }
-    var parentKeys = OrdinaryMetadataKeys(parent, P);
+    var parentKeys: any[] = OrdinaryMetadataKeys(parent, P);
     if (parentKeys.length <= 0) {
         return ownKeys;
     }
     if (ownKeys.length <= 0) {
         return parentKeys;
     }
-    var set = new _Set();
-    var keys = [];
+    var set = new _Set<any>();
+    var keys: any[] = [];
     for (var _i = 0; _i < ownKeys.length; _i++) {
         var key = ownKeys[_i];
         var hasKey = set.has(key);
@@ -305,36 +305,36 @@ function OrdinaryMetadataKeys(O, P) {
     return keys;
 }
 // https://github.com/jonathandturner/decorators/blob/master/specs/metadata.md#ordinaryownmetadatakeys--o-p-
-function OrdinaryOwnMetadataKeys(target, targetKey) {
-    var metadataMap = GetOrCreateMetadataMap(target, targetKey, false);
-    var keys = [];
+function OrdinaryOwnMetadataKeys(target: Object, targetKey: string | symbol): any[] {
+    var metadataMap: Map<any, any> = GetOrCreateMetadataMap(target, targetKey, false);
+    var keys: any[] = [];
     if (metadataMap) {
         metadataMap.forEach(function (_, key) { return keys.push(key); });
     }
     return keys;
 }
 // https://people.mozilla.org/~jorendorff/es6-draft.html#sec-ecmascript-language-types-undefined-type
-function IsUndefined(x) {
+function IsUndefined(x): boolean {
     return x === undefined;
 }
 // https://people.mozilla.org/~jorendorff/es6-draft.html#sec-isarray
-function IsArray(x) {
+function IsArray(x): boolean {
     return Array.isArray(x);
 }
 // https://people.mozilla.org/~jorendorff/es6-draft.html#sec-object-type
-function IsObject(x) {
+function IsObject(x): boolean {
     return typeof x === "object" ? x !== null : typeof x === "function";
 }
 // https://people.mozilla.org/~jorendorff/es6-draft.html#sec-isconstructor
-function IsConstructor(x) {
+function IsConstructor(x): boolean {
     return typeof x === "function";
 }
 // https://people.mozilla.org/~jorendorff/es6-draft.html#sec-ecmascript-language-types-symbol-type
-function IsSymbol(x) {
+function IsSymbol(x): boolean {
     return typeof x === "symbol";
 }
 // https://people.mozilla.org/~jorendorff/es6-draft.html#sec-topropertykey
-function ToPropertyKey(value) {
+function ToPropertyKey(value): string | symbol {
     if (IsSymbol(value)) {
         return value;
     }

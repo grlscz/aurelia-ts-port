@@ -1,62 +1,64 @@
+import {IDecoratorsApplicator, IDecorator} from './interfaces';
+
 import {Metadata} from './metadata';
 
-export class DecoratorApplicator {
-  private _first;
-  private _second;
-  private _third;
-  private _rest;
-  constructor(){
-    this._first = null;
-    this._second = null;
-    this._third = null;
-    this._rest = null;
-  }
-
-  decorator(decorator){
-    if(this._first === null){
-      this._first = decorator;
-      return this;
+export class DecoratorApplicator implements IDecoratorsApplicator {
+    private _first: IDecorator;
+    private _second: IDecorator;
+    private _third: IDecorator;
+    private _rest: IDecorator[];
+    constructor() {
+        this._first = null;
+        this._second = null;
+        this._third = null;
+        this._rest = null;
     }
 
-    if(this._second === null){
-      this._second = decorator;
-      return this;
+    decorator(decorator: IDecorator): DecoratorApplicator {
+        if (this._first === null) {
+            this._first = decorator;
+            return this;
+        }
+
+        if (this._second === null) {
+            this._second = decorator;
+            return this;
+        }
+
+        if (this._third === null) {
+            this._third = decorator;
+            return this;
+        }
+
+        if (this._rest === null) {
+            this._rest = [];
+        }
+
+        this._rest.push(decorator);
+
+        return this;
     }
 
-    if(this._third === null){
-      this._third = decorator;
-      return this;
+    _decorate(target: any): void {
+        var i: number, ii: number, rest: IDecorator[];
+
+        if (this._first !== null) {
+            this._first(target);
+        }
+
+        if (this._second !== null) {
+            this._second(target);
+        }
+
+        if (this._third !== null) {
+            this._third(target);
+        }
+
+        rest = this._rest;
+        if (rest !== null) {
+            for (i = 0, ii = rest.length; i < ii; ++i) {
+                rest[i](target);
+            }
+        }
     }
-
-    if(this._rest === null){
-      this._rest = [];
-    }
-
-    this._rest.push(decorator);
-
-    return this;
-  }
-
-  _decorate(target){
-    var i, ii, rest;
-
-    if(this._first !== null){
-      this._first(target);
-    }
-
-    if(this._second !== null){
-      this._second(target);
-    }
-
-    if(this._third !== null){
-      this._third(target);
-    }
-
-    rest = this._rest;
-    if(rest !== null){
-      for(i = 0, ii = rest.length; i < ii; ++i){
-        rest[i](target);
-      }
-    }
-  }
 }
