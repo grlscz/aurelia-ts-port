@@ -1,105 +1,110 @@
-class Handler {
-  public messageType;
-  public callback;
-  constructor(messageType, callback){
-    this.messageType = messageType;
-    this.callback = callback;
-  }
+import {Dictionary} from 'aurelia-tsutil';
+import {IMessageType, ISimpleEventCallback, IComplexEventCallback, IUnsubscribe, IEventAggregator, IHandler} from './interfaces';
+export {IMessageType, ISimpleEventCallback, IComplexEventCallback, IUnsubscribe, IEventAggregator, IHandler} from './interfaces';
 
-  handle(message){
-    if(message instanceof this.messageType){
-      this.callback.call(null, message);
+class Handler implements IHandler<any> {
+    public messageType: IMessageType<any>;
+    public callback: IComplexEventCallback<any>;
+    constructor(messageType: new (...args) => any, callback: (message: any) => void) {
+        this.messageType = messageType;
+        this.callback = callback;
     }
-  }
+
+    handle(message: any): void {
+        if (message instanceof this.messageType) {
+            this.callback.call(null, message);
+        }
+    }
 }
 
-export class EventAggregator {
-  public eventLookup;
-  public messageHandlers;
-  constructor(){
-    this.eventLookup = {};
-    this.messageHandlers = [];
-  }
+export class EventAggregator implements IEventAggregator {
+    public eventLookup: Dictionary<ISimpleEventCallback<any>[]>;
+    public messageHandlers: IHandler<any>[];
 
-  publish(event, data){
-    var subscribers, i;
-
-    if(typeof event === 'string'){
-      subscribers = this.eventLookup[event];
-      if(subscribers){
-        subscribers = subscribers.slice();
-        i = subscribers.length;
-
-        while(i--) {
-          subscribers[i](data, event);
-        }
-      }
-    }else{
-      subscribers = this.messageHandlers.slice();
-      i = subscribers.length;
-
-      while(i--) {
-        subscribers[i].handle(event);
-      }
+    constructor() {
+        this.eventLookup = {};
+        this.messageHandlers = [];
     }
-  }
 
-  subscribe(event, callback){
-    var subscribers, handler;
+    publish<T>(event: string | T, data?: T) {
+        var subscribers: ISimpleEventCallback<any>[]| IHandler<any>[], i: number;
 
-    if(typeof event === 'string'){
-      subscribers = this.eventLookup[event] || (this.eventLookup[event] = []);
+        if (typeof event === 'string') {
+            subscribers = this.eventLookup[event];
+            if (subscribers) {
+                subscribers = subscribers.slice();
+                i = subscribers.length;
 
-      subscribers.push(callback);
+                while (i--) {
+                    (<ISimpleEventCallback<T>>subscribers[i])(data, event);
+                }
+            }
+        } else {
+            subscribers = this.messageHandlers.slice();
+            i = subscribers.length;
 
-      return function(){
-        var idx = subscribers.indexOf(callback);
-        if (idx != -1) {
-          subscribers.splice(idx, 1);
+            while (i--) {
+                (<IHandler<any>>subscribers[i]).handle(event);
+            }
         }
-      };
-    }else{
-      handler = new Handler(event, callback);
-      subscribers = this.messageHandlers;
-
-      subscribers.push(handler);
-
-      return function(){
-        var idx = subscribers.indexOf(handler);
-        if (idx != -1) {
-          subscribers.splice(idx, 1);
-        }
-      };
     }
-  }
 
-  subscribeOnce(event, callback){
-    var sub = this.subscribe(event,function(data,event){
-      sub();
-      return callback(data,event);
-    });
-    return sub;
-  }
+    subscribe<T>(event: string | IMessageType<T>, callback: ISimpleEventCallback<T> | IComplexEventCallback<T>): IUnsubscribe {
+        var subscribers: ISimpleEventCallback<any>[]| IHandler<any>[], handler: Handler;
+
+        if (typeof event === 'string') {
+            subscribers = this.eventLookup[event] || (this.eventLookup[event] = []);
+
+            (<ISimpleEventCallback<any>[]>subscribers).push(<ISimpleEventCallback<T>>callback);
+
+            return function () {
+                var idx = (<ISimpleEventCallback<any>[]>subscribers).indexOf(callback);
+                if (idx != -1) {
+                    (<ISimpleEventCallback<any>[]>subscribers).splice(idx, 1);
+                }
+            };
+        } else {
+            handler = new Handler(event, <IComplexEventCallback<T>>callback);
+            subscribers = this.messageHandlers;
+
+            (<IHandler<any>[]>subscribers).push(handler);
+
+            return function () {
+                var idx = (<IHandler<any>[]>subscribers).indexOf(handler);
+                if (idx != -1) {
+                    (<IHandler<any>[]>subscribers).splice(idx, 1);
+                }
+            };
+        }
+    }
+
+    subscribeOnce<T>(event: string | IMessageType<T>, callback: ISimpleEventCallback<T> | IComplexEventCallback<T>): IUnsubscribe {
+        var sub = this.subscribe(<any>event, <any>function (data: T, event?: string) {
+            sub();
+            return callback(data, event);
+        });
+        return sub;
+    }
 }
 
-export function includeEventsIn(obj){
-  var ea = new EventAggregator();
+export function includeEventsIn(obj: IEventAggregator): EventAggregator {
+    var ea = new EventAggregator();
 
-  obj.subscribeOnce = function(event, callback){
-    return ea.subscribeOnce(event, callback);
-  };
+    obj.subscribeOnce = function (event, callback) {
+        return ea.subscribeOnce(event, callback);
+    };
 
-  obj.subscribe = function(event, callback){
-    return ea.subscribe(event, callback);
-  };
+    obj.subscribe = function (event, callback) {
+        return ea.subscribe(event, callback);
+    };
 
-  obj.publish = function(event, data){
-    ea.publish(event, data);
-  };
+    obj.publish = function (event, data?) {
+        ea.publish(event, data);
+    };
 
-  return ea;
+    return ea;
 }
 
-export function configure(aurelia){
-  aurelia.withInstance(EventAggregator, includeEventsIn(aurelia));
+export function configure(aurelia) {
+    aurelia.withInstance(EventAggregator, includeEventsIn(aurelia));
 }
