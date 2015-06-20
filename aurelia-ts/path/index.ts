@@ -1,5 +1,5 @@
 import {Dictionary} from 'aurelia-tsutil';
-import {QueryStringScalarValueSource, QueryStringValuesSource} from './interfaces';
+import {QueryStringScalarValueSource, QueryStringSource} from './interfaces';
 
 function trimDots(ary: string[]) {
     var i: number, part: string;
@@ -108,7 +108,7 @@ function type(obj): string {
         : typeof obj;
 }
 
-export function buildQueryString(a: Dictionary<QueryStringValuesSource>, traditional?: boolean): string {
+export function buildQueryString(a: Dictionary<QueryStringSource>, traditional?: boolean): string {
     var prefix: string,
         s: string[] = [],
         add = function (key: string, value: QueryStringScalarValueSource) {
@@ -125,12 +125,12 @@ export function buildQueryString(a: Dictionary<QueryStringValuesSource>, traditi
     return s.join('&').replace(r20, '+');
 }
 
-function _buildQueryString(prefix: string, obj: QueryStringValuesSource, traditional: boolean, add: (key: string, value: QueryStringScalarValueSource) => void) {
+function _buildQueryString(prefix: string, obj: QueryStringSource, traditional: boolean, add: (key: string, value: QueryStringScalarValueSource) => void) {
     var name: string;
 
     if (Array.isArray(obj)) {
         // Serialize array item.
-        (<Array<QueryStringValuesSource>>obj).forEach((v, i) => {
+        (<Array<QueryStringSource>>obj).forEach((v, i) => {
             if (traditional || rbracket.test(prefix)) {
                 // Treat each array item as a scalar.
                 add(prefix, <QueryStringScalarValueSource>v);
@@ -146,7 +146,7 @@ function _buildQueryString(prefix: string, obj: QueryStringValuesSource, traditi
         });
     } else if (!traditional && type(obj) === 'object') {
         // Serialize object item.
-        for (name in <Dictionary<QueryStringValuesSource>>obj) {
+        for (name in <Dictionary<QueryStringSource>>obj) {
             _buildQueryString(prefix + '[' + name + ']', obj[name], traditional, add);
         }
     } else {

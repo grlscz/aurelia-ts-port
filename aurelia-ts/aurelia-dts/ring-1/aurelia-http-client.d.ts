@@ -104,7 +104,7 @@ declare module 'aurelia-http-client/jsonp-request-message' {
 declare module 'aurelia-http-client/request-builder' {
 	import { IRequestMessageTransformer, ResponseReviver, JSONContentReplacer, ICancellablePromise } from 'aurelia-http-client/interfaces';
 	import { HttpClient } from 'aurelia-http-client/http-client';
-	import { QueryStringValuesSource } from 'aurelia-path/interfaces';
+	import { QueryStringSource } from 'aurelia-path/interfaces';
 	import { Dictionary } from 'aurelia-tsutil';
 	import { HttpResponseMessage } from 'aurelia-http-client/http-response-message';
 	/**
@@ -145,7 +145,7 @@ declare module 'aurelia-http-client/request-builder' {
 	    withUri: (uri: string) => RequestBuilder;
 	    withContent: (content: any) => RequestBuilder;
 	    withBaseUrl: (baseUrl: string) => RequestBuilder;
-	    withParams: (params: Dictionary<QueryStringValuesSource>) => RequestBuilder;
+	    withParams: (params: Dictionary<QueryStringSource>) => RequestBuilder;
 	    withResponseType: (responseType: string) => RequestBuilder;
 	    withTimeout: (timeout: number) => RequestBuilder;
 	    withHeader: (key: string, value: string) => RequestBuilder;
@@ -272,7 +272,7 @@ declare module 'aurelia-http-client/http-client' {
 declare module 'aurelia-http-client/interfaces' {
 	import { HttpClient } from 'aurelia-http-client/http-client';
 	import { RequestMessageProcessor } from 'aurelia-http-client/request-message-processor';
-	import { QueryStringValuesSource } from 'aurelia-path/interfaces';
+	import { QueryStringSource } from 'aurelia-path/interfaces';
 	import { Dictionary } from 'aurelia-tsutil';
 	import { Headers } from 'aurelia-http-client/headers';
 	export interface ICancellablePromise<T> extends Promise<T> {
@@ -297,7 +297,7 @@ declare module 'aurelia-http-client/interfaces' {
 	    uri: string;
 	    headers: Headers;
 	    baseUri?: string;
-	    params?: Dictionary<QueryStringValuesSource>;
+	    params?: Dictionary<QueryStringSource>;
 	    content?: any;
 	    fullUri?: string;
 	    responseType?: string;

@@ -1,6 +1,6 @@
 ﻿import {HttpClient} from './http-client';
 import {RequestMessageProcessor} from './request-message-processor';
-import {QueryStringValuesSource} from 'aurelia-path/interfaces';
+import {QueryStringSource} from 'aurelia-path/interfaces';
 import {Dictionary} from 'aurelia-tsutil';
 import {Headers} from './headers';
 
@@ -31,7 +31,7 @@ export interface IRequestMessage {
     uri: string;
     headers: Headers;
     baseUri?: string;
-    params?: Dictionary<QueryStringValuesSource>;
+    params?: Dictionary<QueryStringSource>;
     content?: any;
     fullUri?: string;
     responseType?: string;

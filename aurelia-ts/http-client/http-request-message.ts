@@ -1,5 +1,5 @@
 import {IRequestMessage, IHeaders} from './interfaces';
-import {QueryStringValuesSource} from 'aurelia-path/interfaces';
+import {QueryStringSource} from 'aurelia-path/interfaces';
 import {Dictionary} from 'aurelia-tsutil';
 
 import {Headers} from './headers';

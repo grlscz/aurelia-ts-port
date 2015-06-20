@@ -1,6 +1,6 @@
 import {IRequestMessageTransformer, ResponseReviver, JSONContentReplacer, ICancellablePromise} from './interfaces';
 import {HttpClient} from './http-client';
-import {QueryStringValuesSource} from 'aurelia-path/interfaces';
+import {QueryStringSource} from 'aurelia-path/interfaces';
 import {Dictionary} from 'aurelia-tsutil';
 import {HttpResponseMessage} from './http-response-message';
 
@@ -61,7 +61,7 @@ export class RequestBuilder {
     withUri: (uri: string) => RequestBuilder;
     withContent: (content: any) => RequestBuilder;
     withBaseUrl: (baseUrl: string) => RequestBuilder;
-    withParams: (params: Dictionary<QueryStringValuesSource>) => RequestBuilder;
+    withParams: (params: Dictionary<QueryStringSource>) => RequestBuilder;
     withResponseType: (responseType: string) => RequestBuilder;
     withTimeout: (timeout: number) => RequestBuilder;
     withHeader: (key: string, value: string) => RequestBuilder;
@@ -139,7 +139,7 @@ RequestBuilder.addHelper('withBaseUri', function (baseUri: string) {
     }
 });
 
-RequestBuilder.addHelper('withParams', function (params: Dictionary<QueryStringValuesSource>) {
+RequestBuilder.addHelper('withParams', function (params: Dictionary<QueryStringSource>) {
     return function (client, processor, message) {
         message.params = params;
     }
