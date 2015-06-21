@@ -18,16 +18,16 @@ define(["require", "exports", './state', './segments'], function (require, expor
          */
         RouteRecognizer.prototype.add = function (route) {
             if (Array.isArray(route)) {
-                for (var _i = 0; _i < route.length; _i++) {
-                    var r = route[_i];
+                for (var _i = 0, _a = route; _i < _a.length; _i++) {
+                    var r = _a[_i];
                     this.add(r);
                 }
                 return;
             }
             var currentState = this.rootState, regex = '^', types = { statics: 0, dynamics: 0, stars: 0 }, names = [], routeName = route.handler.name, isEmpty = true;
             var segments = parse(route.path, names, types);
-            for (var _a = 0; _a < segments.length; _a++) {
-                var segment = segments[_a];
+            for (var _b = 0; _b < segments.length; _b++) {
+                var segment = segments[_b];
                 if (segment instanceof segments_1.EpsilonSegment) {
                     continue;
                 }

@@ -1,6 +1,9 @@
+import {Dictionary} from 'aurelia-tsutil';
+import {ISegment, ICharacterSpecification} from './interfaces';
+
 const specials = [
-  '/', '.', '*', '+', '?', '|',
-  '(', ')', '[', ']', '{', '}', '\\'
+    '/', '.', '*', '+', '?', '|',
+    '(', ')', '[', ']', '{', '}', '\\'
 ];
 
 const escapeRegex = new RegExp('(\\' + specials.join('|\\') + ')', 'g');
@@ -22,69 +25,69 @@ const escapeRegex = new RegExp('(\\' + specials.join('|\\') + ')', 'g');
 // * `invalidChars`: a String with a list of all invalid characters
 // * `repeat`: true if the character specification can repeat
 
-export class StaticSegment {
-  string;
-  constructor(string) {
-    this.string = string;
-  }
-
-  eachChar(callback) {
-    for (let ch of this.string) {
-      callback({ validChars: ch });
+export class StaticSegment implements ISegment {
+    string: string;
+    constructor(string: string) {
+        this.string = string;
     }
-  }
 
-  regex() {
-    return this.string.replace(escapeRegex, '\\$1');
-  }
+    eachChar(callback: (charSpec: ICharacterSpecification) => void): void {
+        for (let ch of this.string) {
+            callback({ validChars: ch });
+        }
+    }
 
-  generate() {
-    return this.string;
-  }
+    regex(): string {
+        return this.string.replace(escapeRegex, '\\$1');
+    }
+
+    generate(): string {
+        return this.string;
+    }
 }
 
-export class DynamicSegment {
-  name;
-  constructor(name) {
-    this.name = name;
-  }
+export class DynamicSegment implements ISegment {
+    name: string;
+    constructor(name: string) {
+        this.name = name;
+    }
 
-  eachChar(callback) {
-    callback({ invalidChars: '/', repeat: true });
-  }
+    eachChar(callback: (charSpec: ICharacterSpecification) => void): void {
+        callback({ invalidChars: '/', repeat: true });
+    }
 
-  regex() {
-    return '([^/]+)';
-  }
+    regex(): string {
+        return '([^/]+)';
+    }
 
-  generate(params, consumed) {
-    consumed[this.name] = true;
-    return params[this.name];
-  }
+    generate(params: Dictionary<string>, consumed: Dictionary<boolean>): string {
+        consumed[this.name] = true;
+        return params[this.name];
+    }
 }
 
-export class StarSegment {
-  name;
-  constructor(name) {
-    this.name = name;
-  }
+export class StarSegment implements ISegment {
+    name: string;
+    constructor(name: string) {
+        this.name = name;
+    }
 
-  eachChar(callback) {
-    callback({ invalidChars: '', repeat: true });
-  }
+    eachChar(callback: (charSpec: ICharacterSpecification) => void): void {
+        callback({ invalidChars: '', repeat: true });
+    }
 
-  regex() {
-    return '(.+)';
-  }
+    regex(): string {
+        return '(.+)';
+    }
 
-  generate(params, consumed) {
-    consumed[this.name] = true;
-    return params[this.name];
-  }
+    generate(params: Dictionary<string>, consumed: Dictionary<boolean>): string {
+        consumed[this.name] = true;
+        return params[this.name];
+    }
 }
 
-export class EpsilonSegment {
-  eachChar() {}
-  regex() { return ''; }
-  generate() { return ''; }
+export class EpsilonSegment implements ISegment {
+    eachChar(): void { }
+    regex(): string { return ''; }
+    generate(): string { return ''; }
 }
