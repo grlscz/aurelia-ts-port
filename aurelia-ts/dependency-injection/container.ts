@@ -31,7 +31,7 @@ export var emptyParameters: InstanceKey[] = Object.freeze([]);
 * @class Container
 * @constructor
 */
-export class Container implements Container {
+export class Container {
     public constructionInfo: Map<InstanceSource, IConstructionInfo>;
     public entries: Map<InstanceKey, IHandler[]>;
     public root: Container;

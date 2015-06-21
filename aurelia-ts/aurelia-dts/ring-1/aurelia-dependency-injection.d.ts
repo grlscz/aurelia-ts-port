@@ -238,7 +238,7 @@ declare module 'aurelia-dependency-injection/container' {
 	* @class Container
 	* @constructor
 	*/
-	export class Container implements Container {
+	export class Container {
 	    constructionInfo: Map<InstanceSource, IConstructionInfo>;
 	    entries: Map<InstanceKey, IHandler[]>;
 	    root: Container;
