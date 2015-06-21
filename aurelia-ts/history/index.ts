@@ -1,17 +1,20 @@
-export class History {
-  activate(){
-    throw new Error('History must implement activate().');
-  }
+import {IHistory} from './interfaces';
+export {IHistory, INavigateOptions} from './interfaces';
 
-  deactivate(){
-    throw new Error('History must implement deactivate().');
-  }
+export class History implements IHistory {
+    activate(): boolean {
+        throw new Error('History must implement activate().');
+    }
 
-  navigate() {
-    throw new Error('History must implement navigate().');
-  }
+    deactivate(): void {
+        throw new Error('History must implement deactivate().');
+    }
 
-  navigateBack() {
-    throw new Error('History must implement navigateBack().');
-  }
+    navigate(): boolean {
+        throw new Error('History must implement navigate().');
+    }
+
+    navigateBack(): void {
+        throw new Error('History must implement navigateBack().');
+    }
 }

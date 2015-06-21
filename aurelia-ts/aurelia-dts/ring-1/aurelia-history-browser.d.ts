@@ -1,15 +1,27 @@
+declare module 'aurelia-history-browser/interfaces' {
+	export interface IBrowserHistoryOptions {
+	    root?: string;
+	    hashChange?: boolean;
+	    pushState?: boolean;
+	    silent?: boolean;
+	    routeHandler?: (fragment: string) => boolean;
+	}
+
+}
 declare module 'aurelia-history-browser/index' {
-	import { History } from 'aurelia-history';
+	import { IBrowserHistoryOptions } from 'aurelia-history-browser/interfaces';
+	export { IBrowserHistoryOptions } from 'aurelia-history-browser/interfaces';
+	import { History, INavigateOptions } from 'aurelia-history';
 	export class BrowserHistory extends History {
-	    interval: any;
-	    active: any;
-	    previousFragment: any;
-	    location: any;
-	    history: any;
-	    root: any;
-	    options: any;
-	    fragment: any;
-	    iframe: any;
+	    interval: number;
+	    active: boolean;
+	    previousFragment: string;
+	    location: Location;
+	    history: typeof window.history;
+	    root: string;
+	    options: IBrowserHistoryOptions;
+	    fragment: string;
+	    iframe: Window;
 	    private _checkUrlCallback;
 	    private _hasPushState;
 	    private _wantsHashChange;
@@ -17,13 +29,13 @@ declare module 'aurelia-history-browser/index' {
 	    private _checkUrlInterval;
 	    private _checkUrlTimer;
 	    constructor();
-	    getHash(window?: any): any;
-	    getFragment(fragment?: any, forcePushState?: any): any;
-	    activate(options?: any): any;
+	    getHash(window?: Window): string;
+	    getFragment(fragment?: string, forcePushState?: boolean): string;
+	    activate(options?: IBrowserHistoryOptions): boolean;
 	    deactivate(): void;
 	    checkUrl(): boolean;
-	    loadUrl(fragmentOverride?: any): any;
-	    navigate(fragment?: any, options?: any): any;
+	    loadUrl(fragmentOverride?: string): boolean;
+	    navigate(fragment?: string, options?: boolean | INavigateOptions): boolean;
 	    navigateBack(): void;
 	}
 	export function configure(aurelia: any): void;
