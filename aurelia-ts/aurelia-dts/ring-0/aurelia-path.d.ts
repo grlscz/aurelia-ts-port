@@ -11,6 +11,7 @@ declare module 'aurelia-path/interfaces' {
 declare module 'aurelia-path/index' {
 	import { Dictionary } from 'aurelia-tsutil';
 	import { QueryStringSource } from 'aurelia-path/interfaces';
+	export { QueryStringScalarValueSource, QueryStringSource } from 'aurelia-path/interfaces';
 	export function relativeToFile(name: string, file: string): string;
 	export function join(path1: string, path2: string): string;
 	export function buildQueryString(a: Dictionary<QueryStringSource>, traditional?: boolean): string;

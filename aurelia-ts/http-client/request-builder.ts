@@ -1,10 +1,9 @@
 import {IRequestMessageTransformer, ResponseReviver, JSONContentReplacer, ICancellablePromise} from './interfaces';
 import {HttpClient} from './http-client';
-import {QueryStringSource} from 'aurelia-path/interfaces';
 import {Dictionary} from 'aurelia-tsutil';
 import {HttpResponseMessage} from './http-response-message';
 
-import {join} from 'aurelia-path'
+import {join, QueryStringSource} from 'aurelia-path'
 import {HttpRequestMessage} from './http-request-message';
 import {JSONPRequestMessage} from './jsonp-request-message';
 

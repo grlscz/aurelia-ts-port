@@ -1,5 +1,6 @@
 import {Dictionary} from 'aurelia-tsutil';
 import {QueryStringScalarValueSource, QueryStringSource} from './interfaces';
+export {QueryStringScalarValueSource, QueryStringSource} from './interfaces';
 
 function trimDots(ary: string[]) {
     var i: number, part: string;

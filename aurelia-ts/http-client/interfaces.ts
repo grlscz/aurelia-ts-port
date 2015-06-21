@@ -1,6 +1,6 @@
 ﻿import {HttpClient} from './http-client';
 import {RequestMessageProcessor} from './request-message-processor';
-import {QueryStringSource} from 'aurelia-path/interfaces';
+import {QueryStringSource} from 'aurelia-path';
 import {Dictionary} from 'aurelia-tsutil';
 import {Headers} from './headers';
 

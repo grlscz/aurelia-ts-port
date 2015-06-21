@@ -104,9 +104,9 @@ declare module 'aurelia-http-client/jsonp-request-message' {
 declare module 'aurelia-http-client/request-builder' {
 	import { IRequestMessageTransformer, ResponseReviver, JSONContentReplacer, ICancellablePromise } from 'aurelia-http-client/interfaces';
 	import { HttpClient } from 'aurelia-http-client/http-client';
-	import { QueryStringSource } from 'aurelia-path/interfaces';
 	import { Dictionary } from 'aurelia-tsutil';
 	import { HttpResponseMessage } from 'aurelia-http-client/http-response-message';
+	import { QueryStringSource } from 'aurelia-path';
 	/**
 	* A builder class allowing fluent composition of HTTP requests.
 	*
@@ -272,7 +272,7 @@ declare module 'aurelia-http-client/http-client' {
 declare module 'aurelia-http-client/interfaces' {
 	import { HttpClient } from 'aurelia-http-client/http-client';
 	import { RequestMessageProcessor } from 'aurelia-http-client/request-message-processor';
-	import { QueryStringSource } from 'aurelia-path/interfaces';
+	import { QueryStringSource } from 'aurelia-path';
 	import { Dictionary } from 'aurelia-tsutil';
 	import { Headers } from 'aurelia-http-client/headers';
 	export interface ICancellablePromise<T> extends Promise<T> {
