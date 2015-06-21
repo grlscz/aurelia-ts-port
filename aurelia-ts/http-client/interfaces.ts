@@ -43,7 +43,7 @@ export interface IRequestMessage {
     progressCallback?: (ev: ProgressEvent) => any;
 }
 
-export interface IXHRResponse {
+export interface IXHResponse {
     response: any;
     status: number;
     statusText: string;
@@ -52,7 +52,7 @@ export interface IXHRResponse {
     getAllResponseHeaders?(): string;
 }
 
-export interface IXHRRequest {
+export interface IXHRequest {
     timeout?: number;
     callbackParameterName?: string;
     withCredentials?: boolean;
@@ -61,7 +61,7 @@ export interface IXHRRequest {
     setRequestHeader(header: string, value: string): void;
 }
 
-export interface IXHR extends IXHRResponse, IXHRRequest {
+export interface IXHR extends IXHResponse, IXHRequest {
     abort(): void;
     open(method: string, url: string, async?: boolean): void;
     send(data?: string): void;

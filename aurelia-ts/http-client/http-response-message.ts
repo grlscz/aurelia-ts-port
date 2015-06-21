@@ -1,4 +1,4 @@
-import {IXHRResponse, IRequestMessage, ResponseReviver, JSONResponseReviver, NonJSONResponseReviver, IHeaders} from './interfaces';
+import {IXHResponse, IRequestMessage, ResponseReviver, JSONResponseReviver, NonJSONResponseReviver, IHeaders} from './interfaces';
 
 /* jshint -W093 */
 import {Headers} from './headers';
@@ -15,7 +15,7 @@ export class HttpResponseMessage {
     public headers: IHeaders;
     private _content: any;
 
-    constructor(requestMessage: IRequestMessage, xhr: IXHRResponse, responseType: string, reviver?: ResponseReviver) {
+    constructor(requestMessage: IRequestMessage, xhr: IXHResponse, responseType: string, reviver?: ResponseReviver) {
         this.requestMessage = requestMessage;
         this.statusCode = xhr.status;
         this.response = xhr.response || xhr.responseText;

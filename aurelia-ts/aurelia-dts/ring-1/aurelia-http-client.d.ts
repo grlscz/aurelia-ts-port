@@ -1,5 +1,5 @@
 declare module 'aurelia-http-client/http-response-message' {
-	import { IXHRResponse, IRequestMessage, ResponseReviver, IHeaders } from 'aurelia-http-client/interfaces';
+	import { IXHResponse, IRequestMessage, ResponseReviver, IHeaders } from 'aurelia-http-client/interfaces';
 	export class HttpResponseMessage {
 	    requestMessage: IRequestMessage;
 	    statusCode: number;
@@ -11,7 +11,7 @@ declare module 'aurelia-http-client/http-response-message' {
 	    responseType: string;
 	    headers: IHeaders;
 	    private _content;
-	    constructor(requestMessage: IRequestMessage, xhr: IXHRResponse, responseType: string, reviver?: ResponseReviver);
+	    constructor(requestMessage: IRequestMessage, xhr: IXHResponse, responseType: string, reviver?: ResponseReviver);
 	    content: any;
 	}
 	/**
@@ -60,14 +60,14 @@ declare module 'aurelia-http-client/request-message-processor' {
 declare module 'aurelia-http-client/transformers' {
 	import { HttpClient } from 'aurelia-http-client/http-client';
 	import { RequestMessageProcessor } from 'aurelia-http-client/request-message-processor';
-	import { IXHRRequest, IRequestMessage } from 'aurelia-http-client/interfaces';
-	export function timeoutTransformer(client: HttpClient, processor: RequestMessageProcessor, message: IRequestMessage, xhr: IXHRRequest): void;
-	export function callbackParameterNameTransformer(client: HttpClient, processor: RequestMessageProcessor, message: IRequestMessage, xhr: IXHRRequest): void;
-	export function credentialsTransformer(client: HttpClient, processor: RequestMessageProcessor, message: IRequestMessage, xhr: IXHRRequest): void;
-	export function progressTransformer(client: HttpClient, processor: RequestMessageProcessor, message: IRequestMessage, xhr: IXHRRequest): void;
-	export function responseTypeTransformer(client: HttpClient, processor: RequestMessageProcessor, message: IRequestMessage, xhr: IXHRRequest): void;
-	export function headerTransformer(client: HttpClient, processor: RequestMessageProcessor, message: IRequestMessage, xhr: IXHRRequest): void;
-	export function contentTransformer(client: HttpClient, processor: RequestMessageProcessor, message: IRequestMessage, xhr: IXHRRequest): void;
+	import { IXHRequest, IRequestMessage } from 'aurelia-http-client/interfaces';
+	export function timeoutTransformer(client: HttpClient, processor: RequestMessageProcessor, message: IRequestMessage, xhr: IXHRequest): void;
+	export function callbackParameterNameTransformer(client: HttpClient, processor: RequestMessageProcessor, message: IRequestMessage, xhr: IXHRequest): void;
+	export function credentialsTransformer(client: HttpClient, processor: RequestMessageProcessor, message: IRequestMessage, xhr: IXHRequest): void;
+	export function progressTransformer(client: HttpClient, processor: RequestMessageProcessor, message: IRequestMessage, xhr: IXHRequest): void;
+	export function responseTypeTransformer(client: HttpClient, processor: RequestMessageProcessor, message: IRequestMessage, xhr: IXHRequest): void;
+	export function headerTransformer(client: HttpClient, processor: RequestMessageProcessor, message: IRequestMessage, xhr: IXHRequest): void;
+	export function contentTransformer(client: HttpClient, processor: RequestMessageProcessor, message: IRequestMessage, xhr: IXHRequest): void;
 
 }
 declare module 'aurelia-http-client/http-request-message' {
@@ -308,14 +308,14 @@ declare module 'aurelia-http-client/interfaces' {
 	    withCredentials?: boolean;
 	    progressCallback?: (ev: ProgressEvent) => any;
 	}
-	export interface IXHRResponse {
+	export interface IXHResponse {
 	    response: any;
 	    status: number;
 	    statusText: string;
 	    responseText?: string;
 	    getAllResponseHeaders?(): string;
 	}
-	export interface IXHRRequest {
+	export interface IXHRequest {
 	    timeout?: number;
 	    callbackParameterName?: string;
 	    withCredentials?: boolean;
@@ -323,7 +323,7 @@ declare module 'aurelia-http-client/interfaces' {
 	    responseType?: string;
 	    setRequestHeader(header: string, value: string): void;
 	}
-	export interface IXHR extends IXHRResponse, IXHRRequest {
+	export interface IXHR extends IXHResponse, IXHRequest {
 	    abort(): void;
 	    open(method: string, url: string, async?: boolean): void;
 	    send(data?: string): void;
@@ -339,14 +339,14 @@ declare module 'aurelia-http-client/interfaces' {
 }
 declare module 'aurelia-http-client/headers' {
 	import { Dictionary } from 'aurelia-tsutil';
-	import { IHeaders, IXHRRequest } from 'aurelia-http-client/interfaces';
+	import { IHeaders, IXHRequest } from 'aurelia-http-client/interfaces';
 	export class Headers implements IHeaders {
 	    headers: Dictionary<string>;
 	    constructor(headers?: Dictionary<string>);
 	    add(key: string, value: string): void;
 	    get(key: string): string;
 	    clear(): void;
-	    configureXHR(xhr: IXHRRequest): void;
+	    configureXHR(xhr: IXHRequest): void;
 	    /**
 	     * XmlHttpRequest's getAllResponseHeaders() method returns a string of response
 	     * headers according to the format described here:

@@ -1,5 +1,5 @@
 import {Dictionary} from 'aurelia-tsutil';
-import {IHeaders, IXHRRequest} from './interfaces';
+import {IHeaders, IXHRequest} from './interfaces';
 
 export class Headers implements IHeaders {
     public headers: Dictionary<string>;
@@ -20,7 +20,7 @@ export class Headers implements IHeaders {
         this.headers = {};
     }
 
-    configureXHR(xhr: IXHRRequest): void {
+    configureXHR(xhr: IXHRequest): void {
         var headers = this.headers, key;
 
         for (key in headers) {

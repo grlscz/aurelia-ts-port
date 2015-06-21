@@ -1,32 +1,32 @@
 import {HttpClient} from './http-client';
 import {RequestMessageProcessor} from './request-message-processor';
-import {IXHRRequest, IRequestMessage} from './interfaces';
+import {IXHRequest, IRequestMessage} from './interfaces';
 
-export function timeoutTransformer(client: HttpClient, processor: RequestMessageProcessor, message: IRequestMessage, xhr: IXHRRequest): void {
+export function timeoutTransformer(client: HttpClient, processor: RequestMessageProcessor, message: IRequestMessage, xhr: IXHRequest): void {
     if (message.timeout !== undefined) {
         xhr.timeout = message.timeout;
     }
 }
 
-export function callbackParameterNameTransformer(client: HttpClient, processor: RequestMessageProcessor, message: IRequestMessage, xhr: IXHRRequest): void {
+export function callbackParameterNameTransformer(client: HttpClient, processor: RequestMessageProcessor, message: IRequestMessage, xhr: IXHRequest): void {
     if (message.callbackParameterName !== undefined) {
         xhr.callbackParameterName = message.callbackParameterName;
     }
 }
 
-export function credentialsTransformer(client: HttpClient, processor: RequestMessageProcessor, message: IRequestMessage, xhr: IXHRRequest): void {
+export function credentialsTransformer(client: HttpClient, processor: RequestMessageProcessor, message: IRequestMessage, xhr: IXHRequest): void {
     if (message.withCredentials !== undefined) {
         xhr.withCredentials = message.withCredentials;
     }
 }
 
-export function progressTransformer(client: HttpClient, processor: RequestMessageProcessor, message: IRequestMessage, xhr: IXHRRequest): void {
+export function progressTransformer(client: HttpClient, processor: RequestMessageProcessor, message: IRequestMessage, xhr: IXHRequest): void {
     if (message.progressCallback) {
         xhr.upload.onprogress = message.progressCallback;
     }
 }
 
-export function responseTypeTransformer(client: HttpClient, processor: RequestMessageProcessor, message: IRequestMessage, xhr: IXHRRequest): void {
+export function responseTypeTransformer(client: HttpClient, processor: RequestMessageProcessor, message: IRequestMessage, xhr: IXHRequest): void {
     var responseType = message.responseType;
 
     if (responseType === 'json') {
@@ -36,7 +36,7 @@ export function responseTypeTransformer(client: HttpClient, processor: RequestMe
     xhr.responseType = responseType;
 }
 
-export function headerTransformer(client: HttpClient, processor: RequestMessageProcessor, message: IRequestMessage, xhr: IXHRRequest): void {
+export function headerTransformer(client: HttpClient, processor: RequestMessageProcessor, message: IRequestMessage, xhr: IXHRequest): void {
     message.headers.configureXHR(xhr);
 }
 
@@ -45,7 +45,7 @@ declare var ArrayBufferView: {
     new (): ArrayBufferView;
 }
 
-export function contentTransformer(client: HttpClient, processor: RequestMessageProcessor, message: IRequestMessage, xhr: IXHRRequest): void {
+export function contentTransformer(client: HttpClient, processor: RequestMessageProcessor, message: IRequestMessage, xhr: IXHRequest): void {
     if ((<any>window).FormData && message.content instanceof FormData) {
         return;
     }
