@@ -175,7 +175,7 @@ declare module 'aurelia-route-recognizer/index' {
 	     */
 	    recognize(path: string): RecognizeResults;
 	}
-	export class RecognizeResults {
+	export class RecognizeResults implements ArrayLike<IRoureMatch> {
 	    splice: {
 	        (start: number): IRoureMatch[];
 	        (start: number, deleteCount: number, ...items: IRoureMatch[]): IRoureMatch[];

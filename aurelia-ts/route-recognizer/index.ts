@@ -321,7 +321,7 @@ export class RouteRecognizer {
     }
 }
 
-export class RecognizeResults {
+export class RecognizeResults implements ArrayLike<IRoureMatch> {
     splice: { (start: number): IRoureMatch[]; (start: number, deleteCount: number, ...items: IRoureMatch[]): IRoureMatch[] };
     slice: { (start?: number, end?: number): IRoureMatch[] };
     push: { (...items: IRoureMatch[]): number };
