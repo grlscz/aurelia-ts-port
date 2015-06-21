@@ -1,3 +1,6 @@
+import {InstanceKey, InstanceSource, IActivator, IRegistration} from './interfaces';
+import {Container} from './container';
+
 import core from 'core-js';
 
 /**
@@ -7,23 +10,23 @@ import core from 'core-js';
 * @constructor
 * @param {Object} [key] The key to register as.
 */
-export class TransientRegistration {
-  key;
-  constructor(key){
-    this.key = key;
-  }
+export class TransientRegistration implements IRegistration {
+    key: InstanceKey;
+    constructor(key: InstanceKey) {
+        this.key = key;
+    }
 
-  /**
-  * Called by the container to register the annotated function/class as transient.
-  *
-  * @method register
-  * @param {Container} container The container to register with.
-  * @param {Object} key The key to register as.
-  * @param {Object} fn The function to register (target of the annotation).
-  */
-  register(container, key, fn){
-    container.registerTransient(this.key || key, fn);
-  }
+    /**
+    * Called by the container to register the annotated function/class as transient.
+    *
+    * @method register
+    * @param {Container} container The container to register with.
+    * @param {Object} key The key to register as.
+    * @param {Object} fn The function to register (target of the annotation).
+    */
+    register(container: Container, key: InstanceKey, fn: InstanceSource): void {
+        container.registerTransient(this.key || key, fn);
+    }
 }
 
 /**
@@ -33,30 +36,32 @@ export class TransientRegistration {
 * @constructor
 * @param {Object} [key] The key to register as.
 */
-export class SingletonRegistration {
-  registerInChild;
-  key;
-  constructor(keyOrRegisterInChild, registerInChild=false){
-    if(typeof keyOrRegisterInChild === 'boolean'){
-      this.registerInChild = keyOrRegisterInChild;
-    }else{
-      this.key = keyOrRegisterInChild;
-      this.registerInChild = registerInChild;
+export class SingletonRegistration implements IRegistration {
+    registerInChild: boolean;
+    key: InstanceKey;
+    constructor(registerInChild: boolean);
+    constructor(key: InstanceKey, registerInChild?: boolean);
+    constructor(keyOrRegisterInChild: InstanceKey | boolean, registerInChild: boolean = false) {
+        if (typeof keyOrRegisterInChild === 'boolean') {
+            this.registerInChild = keyOrRegisterInChild;
+        } else {
+            this.key = keyOrRegisterInChild;
+            this.registerInChild = registerInChild;
+        }
     }
-  }
 
-  /**
-  * Called by the container to register the annotated function/class as a singleton.
-  *
-  * @method register
-  * @param {Container} container The container to register with.
-  * @param {Object} key The key to register as.
-  * @param {Object} fn The function to register (target of the annotation).
-  */
-  register(container, key, fn){
-    var destination = this.registerInChild ? container : container.root;
-    destination.registerSingleton(this.key || key, fn);
-  }
+    /**
+    * Called by the container to register the annotated function/class as a singleton.
+    *
+    * @method register
+    * @param {Container} container The container to register with.
+    * @param {Object} key The key to register as.
+    * @param {Object} fn The function to register (target of the annotation).
+    */
+    register(container: Container, key: InstanceKey, fn: InstanceSource): void {
+        var destination = this.registerInChild ? container : container.root;
+        destination.registerSingleton(this.key || key, fn);
+    }
 }
 
 /**
@@ -65,17 +70,17 @@ export class SingletonRegistration {
 * @class Resolver
 * @constructor
 */
-export class Resolver {
-  /**
-  * Called by the container to allow custom resolution of dependencies for a function/class.
-  *
-  * @method get
-  * @param {Container} container The container to resolve from.
-  * @return {Object} Returns the resolved object.
-  */
-  get(container){
-    throw new Error('A custom Resolver must implement get(container) and return the resolved instance(s).');
-  }
+export class Resolver implements InstanceKey {
+    /**
+    * Called by the container to allow custom resolution of dependencies for a function/class.
+    *
+    * @method get
+    * @param {Container} container The container to resolve from.
+    * @return {Object} Returns the resolved object.
+    */
+    get(container: Container): Object {
+        throw new Error('A custom Resolver must implement get(container) and return the resolved instance(s).');
+    }
 }
 
 /**
@@ -87,36 +92,36 @@ export class Resolver {
 * @param {Object} key The key to lazily resolve.
 */
 export class Lazy extends Resolver {
-  key;
-  constructor(key){
-    super();
-    this.key = key;
-  }
+    key: InstanceKey;
+    constructor(key: InstanceKey) {
+        super();
+        this.key = key;
+    }
 
-  /**
-  * Called by the container to lazily resolve the dependency into a lazy locator function.
-  *
-  * @method get
-  * @param {Container} container The container to resolve from.
-  * @return {Function} Returns a function which can be invoked at a later time to obtain the actual dependency.
-  */
-  get(container){
-    return () => {
-      return container.get(this.key);
-    };
-  }
+    /**
+    * Called by the container to lazily resolve the dependency into a lazy locator function.
+    *
+    * @method get
+    * @param {Container} container The container to resolve from.
+    * @return {Function} Returns a function which can be invoked at a later time to obtain the actual dependency.
+    */
+    get(container: Container): () => Object {
+        return () => {
+            return container.get(this.key);
+        };
+    }
 
-  /**
-  * Creates a Lazy Resolver for the supplied key.
-  *
-  * @method of
-  * @static
-  * @param {Object} key The key to lazily resolve.
-  * @return {Lazy} Returns an insance of Lazy for the key.
-  */
-  static of(key){
-    return new Lazy(key);
-  }
+    /**
+    * Creates a Lazy Resolver for the supplied key.
+    *
+    * @method of
+    * @static
+    * @param {Object} key The key to lazily resolve.
+    * @return {Lazy} Returns an insance of Lazy for the key.
+    */
+    static of(key: InstanceKey): Lazy {
+        return new Lazy(key);
+    }
 }
 
 /**
@@ -128,34 +133,34 @@ export class Lazy extends Resolver {
 * @param {Object} key The key to lazily resolve all matches for.
 */
 export class All extends Resolver {
-  key;
-  constructor(key){
-    super();
-    this.key = key;
-  }
+    key: InstanceKey;
+    constructor(key: InstanceKey) {
+        super();
+        this.key = key;
+    }
 
-  /**
-  * Called by the container to resolve all matching dependencies as an array of instances.
-  *
-  * @method get
-  * @param {Container} container The container to resolve from.
-  * @return {Object[]} Returns an array of all matching instances.
-  */
-  get(container){
-    return container.getAll(this.key);
-  }
+    /**
+    * Called by the container to resolve all matching dependencies as an array of instances.
+    *
+    * @method get
+    * @param {Container} container The container to resolve from.
+    * @return {Object[]} Returns an array of all matching instances.
+    */
+    get(container: Container): Object[] {
+        return container.getAll(this.key);
+    }
 
-  /**
-  * Creates an All Resolver for the supplied key.
-  *
-  * @method of
-  * @static
-  * @param {Object} key The key to resolve all instances for.
-  * @return {All} Returns an insance of All for the key.
-  */
-  static of(key){
-    return new All(key);
-  }
+    /**
+    * Creates an All Resolver for the supplied key.
+    *
+    * @method of
+    * @static
+    * @param {Object} key The key to resolve all instances for.
+    * @return {All} Returns an insance of All for the key.
+    */
+    static of(key: InstanceKey): All {
+        return new All(key);
+    }
 }
 
 /**
@@ -168,41 +173,41 @@ export class All extends Resolver {
 * @param {Boolean} [checkParent=false] Indicates whether or not the parent container hierarchy should be checked.
 */
 export class Optional extends Resolver {
-  key;
-  checkParent;
-  constructor(key, checkParent=false){
-    super();
-    this.key = key;
-    this.checkParent = checkParent;
-  }
-
-  /**
-  * Called by the container to provide optional resolution of the key.
-  *
-  * @method get
-  * @param {Container} container The container to resolve from.
-  * @return {Object} Returns the instance if found; otherwise null.
-  */
-  get(container){
-    if(container.hasHandler(this.key, this.checkParent)){
-      return container.get(this.key);
+    key: InstanceKey;
+    checkParent: boolean;
+    constructor(key: InstanceKey, checkParent: boolean = false) {
+        super();
+        this.key = key;
+        this.checkParent = checkParent;
     }
 
-    return null;
-  }
+    /**
+    * Called by the container to provide optional resolution of the key.
+    *
+    * @method get
+    * @param {Container} container The container to resolve from.
+    * @return {Object} Returns the instance if found; otherwise null.
+    */
+    get(container: Container): Object {
+        if (container.hasHandler(this.key, this.checkParent)) {
+            return container.get(this.key);
+        }
 
-  /**
-  * Creates an Optional Resolver for the supplied key.
-  *
-  * @method of
-  * @static
-  * @param {Object} key The key to optionally resolve for.
-  * @param {Boolean} [checkParent=false] Indicates whether or not the parent container hierarchy should be checked.
-  * @return {Optional} Returns an insance of Optional for the key.
-  */
-  static of(key, checkParent=false){
-    return new Optional(key, checkParent);
-  }
+        return null;
+    }
+
+    /**
+    * Creates an Optional Resolver for the supplied key.
+    *
+    * @method of
+    * @static
+    * @param {Object} key The key to optionally resolve for.
+    * @param {Boolean} [checkParent=false] Indicates whether or not the parent container hierarchy should be checked.
+    * @return {Optional} Returns an insance of Optional for the key.
+    */
+    static of(key: InstanceKey, checkParent: boolean = false): Optional {
+        return new Optional(key, checkParent);
+    }
 }
 
 
@@ -215,36 +220,36 @@ export class Optional extends Resolver {
 * @param {Object} key The key to resolve from the parent container.
 */
 export class Parent extends Resolver {
-  key;
-  constructor(key){
-    super();
-    this.key = key;
-  }
+    key: InstanceKey;
+    constructor(key: InstanceKey) {
+        super();
+        this.key = key;
+    }
 
-  /**
-  * Called by the container to load the dependency from the parent container
-  *
-  * @method get
-  * @param {Container} container The container to resolve the parent from.
-  * @return {Function} Returns the matching instance from the parent container
-  */
-  get(container){
-    return container.parent
-      ? container.parent.get(this.key)
-      : null;
-  }
+    /**
+    * Called by the container to load the dependency from the parent container
+    *
+    * @method get
+    * @param {Container} container The container to resolve the parent from.
+    * @return {Function} Returns the matching instance from the parent container
+    */
+    get(container: Container): Object {
+        return container.parent
+            ? container.parent.get(this.key)
+            : null;
+    }
 
-  /**
-  * Creates a Parent Resolver for the supplied key.
-  *
-  * @method of
-  * @static
-  * @param {Object} key The key to resolve.
-  * @return {Parent} Returns an insance of Parent for the key.
-  */
-  static of(key){
-    return new Parent(key);
-  }
+    /**
+    * Creates a Parent Resolver for the supplied key.
+    *
+    * @method of
+    * @static
+    * @param {Object} key The key to resolve.
+    * @return {Parent} Returns an insance of Parent for the key.
+    */
+    static of(key: InstanceKey): Parent {
+        return new Parent(key);
+    }
 }
 
 /**
@@ -253,12 +258,12 @@ export class Parent extends Resolver {
 * @class ClassActivator
 * @constructor
 */
-export class ClassActivator {
-  static instance = new ClassActivator();
+export class ClassActivator implements IActivator<new (...args) => Object> {
+    static instance = new ClassActivator();
 
-  invoke(fn, args){
-    return Reflect.construct(fn, args);
-  }
+    invoke(fn: new (...args) => Object, args: Object[]): Object {
+        return Reflect.construct(fn, args);
+    }
 }
 
 /**
@@ -267,10 +272,10 @@ export class ClassActivator {
 * @class FactoryActivator
 * @constructor
 */
-export class FactoryActivator {
-  static instance = new FactoryActivator();
+export class FactoryActivator implements IActivator<(...args) => Object> {
+    static instance = new FactoryActivator();
 
-  invoke(fn, args){
-    return fn.apply(undefined, args);
-  }
+    invoke(fn: (...args) => Object, args: Object[]): Object {
+        return fn.apply(undefined, args);
+    }
 }

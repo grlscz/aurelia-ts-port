@@ -51,8 +51,10 @@ declare module 'aurelia-metadata/interfaces' {
 	export interface IHasOriginSource {
 	    origin: OriginSource | (() => OriginSource);
 	}
-	export interface IDecorator {
-	    (traget: any): void;
+	export interface ITypedDecorator<T> {
+	    (traget: T): void;
+	}
+	export interface IDecorator extends ITypedDecorator<Object> {
 	}
 	export interface IAddDecorator {
 	    (...args: any[]): IDecoratorsApplicator;
@@ -110,6 +112,7 @@ declare module 'aurelia-metadata/index' {
 	export { Origin } from 'aurelia-metadata/origin';
 	export { Metadata } from 'aurelia-metadata/metadata';
 	export { Decorators } from 'aurelia-metadata/decorators';
+	export { IDecorator, ITypedDecorator } from 'aurelia-metadata/interfaces';
 
 }
 declare module 'aurelia-metadata' {

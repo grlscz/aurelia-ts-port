@@ -20,8 +20,11 @@ export interface IHasOriginSource {
     origin: OriginSource | (() => OriginSource);
 }
 
-export interface IDecorator {
-    (traget: any): void;
+// IDecorator<T = Object> https://github.com/Microsoft/TypeScript/issues/2175
+export interface ITypedDecorator<T> {
+    (traget: T): void;
+}
+export interface IDecorator extends ITypedDecorator<Object> {
 }
 
 export interface IAddDecorator {
