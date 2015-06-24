@@ -1,6 +1,5 @@
 import {IRequestMessage, IHeaders} from './interfaces';
-import {QueryStringSource} from 'aurelia-path';
-import {Dictionary} from 'aurelia-tsutil';
+import {Dictionary} from 'tsutil';
 
 import {Headers} from './headers';
 import {RequestMessageProcessor} from './request-message-processor';

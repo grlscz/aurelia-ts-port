@@ -1,17 +1,17 @@
 declare module 'aurelia-http-client/http-response-message' {
-	import { IXHResponse, IRequestMessage, ResponseReviver, IHeaders } from 'aurelia-http-client/interfaces';
+	import { IXHResponse, IRequestMessage, TResponseReviver, IHeaders } from 'aurelia-http-client/interfaces';
 	export class HttpResponseMessage {
 	    requestMessage: IRequestMessage;
 	    statusCode: number;
 	    response: any;
 	    isSuccess: boolean;
 	    statusText: string;
-	    reviver: ResponseReviver;
+	    reviver: TResponseReviver;
 	    mimeType: string;
 	    responseType: string;
 	    headers: IHeaders;
 	    private _content;
-	    constructor(requestMessage: IRequestMessage, xhr: IXHResponse, responseType: string, reviver?: ResponseReviver);
+	    constructor(requestMessage: IRequestMessage, xhr: IXHResponse, responseType: string, reviver?: TResponseReviver);
 	    content: any;
 	}
 	/**
@@ -102,11 +102,11 @@ declare module 'aurelia-http-client/jsonp-request-message' {
 
 }
 declare module 'aurelia-http-client/request-builder' {
-	import { IRequestMessageTransformer, ResponseReviver, JSONContentReplacer, ICancellablePromise } from 'aurelia-http-client/interfaces';
+	import { IRequestMessageTransformer, TResponseReviver, IJSONContentReplacer, ICancellablePromise } from 'aurelia-http-client/interfaces';
 	import { HttpClient } from 'aurelia-http-client/http-client';
-	import { Dictionary } from 'aurelia-tsutil';
+	import { Dictionary } from 'tsutil';
 	import { HttpResponseMessage } from 'aurelia-http-client/http-response-message';
-	import { QueryStringSource } from 'aurelia-path';
+	import { TQueryStringSource } from 'aurelia-path';
 	/**
 	* A builder class allowing fluent composition of HTTP requests.
 	*
@@ -145,13 +145,13 @@ declare module 'aurelia-http-client/request-builder' {
 	    withUri: (uri: string) => RequestBuilder;
 	    withContent: (content: any) => RequestBuilder;
 	    withBaseUrl: (baseUrl: string) => RequestBuilder;
-	    withParams: (params: Dictionary<QueryStringSource>) => RequestBuilder;
+	    withParams: (params: Dictionary<TQueryStringSource>) => RequestBuilder;
 	    withResponseType: (responseType: string) => RequestBuilder;
 	    withTimeout: (timeout: number) => RequestBuilder;
 	    withHeader: (key: string, value: string) => RequestBuilder;
 	    withCredentials: (value: boolean) => RequestBuilder;
-	    withReviver: (reviver: ResponseReviver) => RequestBuilder;
-	    withReplacer: (replacer: JSONContentReplacer) => RequestBuilder;
+	    withReviver: (reviver: TResponseReviver) => RequestBuilder;
+	    withReplacer: (replacer: IJSONContentReplacer) => RequestBuilder;
 	    withProgressCallback: (progressCallback: (ev: ProgressEvent) => any) => RequestBuilder;
 	    withCallbackParameterName: (callbackParameterName: string) => RequestBuilder;
 	}
@@ -272,17 +272,23 @@ declare module 'aurelia-http-client/http-client' {
 declare module 'aurelia-http-client/interfaces' {
 	import { HttpClient } from 'aurelia-http-client/http-client';
 	import { RequestMessageProcessor } from 'aurelia-http-client/request-message-processor';
-	import { QueryStringSource } from 'aurelia-path';
-	import { Dictionary } from 'aurelia-tsutil';
+	import { TQueryStringSource } from 'aurelia-path';
+	import { Dictionary } from 'tsutil';
 	import { Headers } from 'aurelia-http-client/headers';
 	export interface ICancellablePromise<T> extends Promise<T> {
 	    abort(): any;
 	    cancel(): any;
 	}
-	export type JSONResponseReviver = (key: any, value: any) => any;
-	export type NonJSONResponseReviver = (response: any) => any;
-	export type ResponseReviver = JSONResponseReviver | NonJSONResponseReviver;
-	export type JSONContentReplacer = (key: string, value: any) => any;
+	export interface IJSONResponseReviver {
+	    (key: any, value: any): any;
+	}
+	export interface INonJSONResponseReviver {
+	    (response: any): any;
+	}
+	export type TResponseReviver = IJSONResponseReviver | INonJSONResponseReviver;
+	export interface IJSONContentReplacer {
+	    (key: string, value: any): any;
+	}
 	export interface IHeaders {
 	    headers: Dictionary<string>;
 	}
@@ -297,12 +303,12 @@ declare module 'aurelia-http-client/interfaces' {
 	    uri: string;
 	    headers: Headers;
 	    baseUri?: string;
-	    params?: Dictionary<QueryStringSource>;
+	    params?: Dictionary<TQueryStringSource>;
 	    content?: any;
 	    fullUri?: string;
 	    responseType?: string;
-	    reviver?: ResponseReviver;
-	    replacer?: JSONContentReplacer;
+	    reviver?: TResponseReviver;
+	    replacer?: IJSONContentReplacer;
 	    timeout?: number;
 	    callbackParameterName?: string;
 	    withCredentials?: boolean;
@@ -338,7 +344,7 @@ declare module 'aurelia-http-client/interfaces' {
 
 }
 declare module 'aurelia-http-client/headers' {
-	import { Dictionary } from 'aurelia-tsutil';
+	import { Dictionary } from 'tsutil';
 	import { IHeaders, IXHRequest } from 'aurelia-http-client/interfaces';
 	export class Headers implements IHeaders {
 	    headers: Dictionary<string>;

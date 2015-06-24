@@ -53,8 +53,8 @@ define(["require", "exports"], function (require, exports) {
     })();
     exports.ComputedPropertyObserver = ComputedPropertyObserver;
     function hasDeclaredDependencies(descriptor) {
-        return descriptor && descriptor.get && !descriptor.set
-            && descriptor.get.dependencies && descriptor.get.dependencies.length;
+        return (descriptor && descriptor.get && !descriptor.set
+            && descriptor.get.dependencies && descriptor.get.dependencies.length);
     }
     exports.hasDeclaredDependencies = hasDeclaredDependencies;
     function declarePropertyDependencies(ctor, propertyName, dependencies) {

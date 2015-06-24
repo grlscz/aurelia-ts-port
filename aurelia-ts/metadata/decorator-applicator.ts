@@ -1,12 +1,10 @@
-import {IDecoratorsApplicator, IDecorator} from './interfaces';
-
 import {Metadata} from './metadata';
 
-export class DecoratorApplicator implements IDecoratorsApplicator {
-    private _first: IDecorator;
-    private _second: IDecorator;
-    private _third: IDecorator;
-    private _rest: IDecorator[];
+export class DecoratorApplicator {
+    private _first: ClassDecorator;
+    private _second: ClassDecorator;
+    private _third: ClassDecorator;
+    private _rest: ClassDecorator[];
     constructor() {
         this._first = null;
         this._second = null;
@@ -14,7 +12,7 @@ export class DecoratorApplicator implements IDecoratorsApplicator {
         this._rest = null;
     }
 
-    decorator(decorator: IDecorator): DecoratorApplicator {
+    decorator(decorator: ClassDecorator): DecoratorApplicator {
         if (this._first === null) {
             this._first = decorator;
             return this;
@@ -39,8 +37,8 @@ export class DecoratorApplicator implements IDecoratorsApplicator {
         return this;
     }
 
-    _decorate(target: any): void {
-        var i: number, ii: number, rest: IDecorator[];
+    _decorate(target: Function): void {
+        var i: number, ii: number, rest: ClassDecorator[];
 
         if (this._first !== null) {
             this._first(target);

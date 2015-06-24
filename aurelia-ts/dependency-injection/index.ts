@@ -1,12 +1,12 @@
-import {IMetadataKeys, InstanceKey, InstanceSource, IInjectionInfo, IRegistration, IActivator} from './interfaces';
-export {IActivator, IInjectionInfo, IRegistration} from './interfaces';
+import {IMetadataKeys, InstanceKey, InstanceSource, IHasInjectionInfo, IRegistration, IActivator} from './interfaces';
+export {IActivator, IHasInjectionInfo, IRegistration} from './interfaces';
 
 /**
  * A lightweight, extensible dependency injection container for JavaScript.
  *
  * @module dependency-injection
  */
-import {Decorators, Metadata, ITypedDecorator} from 'aurelia-metadata';
+import {Decorators, Metadata} from 'aurelia-metadata';
 import {TransientRegistration, SingletonRegistration, FactoryActivator} from './metadata';
 import {emptyParameters} from './container';
 export {
@@ -24,44 +24,44 @@ FactoryActivator
 export {Container} from './container';
 
 export function autoinject(target: Function): void;
-export function autoinject(): ITypedDecorator<Function>;
+export function autoinject(): ClassDecorator;
 export function autoinject(target?: Function): any {
     var deco = function (target: Function) {
-        (<IInjectionInfo><InstanceSource>target).inject = Reflect.getOwnMetadata(Metadata.paramTypes, target) || emptyParameters;
+        (<IHasInjectionInfo><InstanceSource>target).inject = Reflect.getOwnMetadata(Metadata.paramTypes, target) || emptyParameters;
     };
 
     return target ? deco(target) : deco;
 }
 
-export function inject(...rest: InstanceKey[]): ITypedDecorator<InstanceSource> {
-    return function (target: InstanceSource) {
-        (<IInjectionInfo>target).inject = rest;
+export function inject(...rest: InstanceKey[]): ClassDecorator {
+    return function (target: Function) {
+        (<IHasInjectionInfo><InstanceSource>target).inject = rest;
     }
 }
 
-export function registration(value: IRegistration): ITypedDecorator<InstanceSource> {
-    return function (target: InstanceSource) {
+export function registration(value: IRegistration): ClassDecorator {
+    return function (target: Function) {
         Reflect.defineMetadata((<IMetadataKeys><any>Metadata).registration, value, target);
     }
 }
 
-export function transient(key?: InstanceKey): ITypedDecorator<InstanceSource> {
+export function transient(key?: InstanceKey): ClassDecorator {
     return registration(new TransientRegistration(key));
 }
 
-export function singleton(registerInChild: boolean): ITypedDecorator<InstanceSource>;
-export function singleton(key: InstanceKey, registerInChild?: boolean): ITypedDecorator<InstanceSource>;
-export function singleton(keyOrRegisterInChild: InstanceKey | boolean, registerInChild: boolean = false): ITypedDecorator<InstanceSource> {
+export function singleton(registerInChild: boolean): ClassDecorator;
+export function singleton(key: InstanceKey, registerInChild?: boolean): ClassDecorator;
+export function singleton(keyOrRegisterInChild: InstanceKey | boolean, registerInChild: boolean = false): ClassDecorator {
     return registration(new SingletonRegistration(keyOrRegisterInChild, registerInChild));
 }
 
-export function instanceActivator<T>(value: IActivator<T>): ITypedDecorator<T> {
+export function instanceActivator<T extends Function>(value: IActivator<T>): ClassDecorator {
     return function (target:T) {
         Reflect.defineMetadata((<IMetadataKeys><any>Metadata).instanceActivator, value, target);
     }
 }
 
-export function factory(): ITypedDecorator<(...args) => Object> {
+export function factory(): ClassDecorator {
     return instanceActivator(FactoryActivator.instance);
 }
 

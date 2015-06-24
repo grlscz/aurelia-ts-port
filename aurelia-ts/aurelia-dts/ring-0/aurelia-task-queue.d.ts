@@ -1,16 +1,25 @@
+declare module 'aurelia-task-queue/interfaces' {
+	export interface ITask {
+	    call(): void;
+	    onError?(error: Error): void;
+	}
+
+}
 declare module 'aurelia-task-queue/index' {
+	import { ITask } from 'aurelia-task-queue/interfaces';
+	export { ITask } from 'aurelia-task-queue/interfaces';
 	export class TaskQueue {
-	    microTaskQueue: any;
-	    microTaskQueueCapacity: any;
-	    taskQueue: any;
-	    requestFlushMicroTaskQueue: any;
-	    requestFlushTaskQueue: any;
+	    microTaskQueue: ITask[];
+	    microTaskQueueCapacity: number;
+	    taskQueue: ITask[];
+	    requestFlushMicroTaskQueue: () => void;
+	    requestFlushTaskQueue: () => void;
 	    constructor();
-	    queueMicroTask(task: any): void;
-	    queueTask(task: any): void;
+	    queueMicroTask(task: ITask): void;
+	    queueTask(task: ITask): void;
 	    flushTaskQueue(): void;
 	    flushMicroTaskQueue(): void;
-	    onError(error: any, task: any): void;
+	    onError(error: Error, task: ITask): void;
 	}
 
 }

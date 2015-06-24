@@ -1,11 +1,11 @@
-import {IOrigin, OriginSource, IHasOriginSource} from './interfaces';
+import {IOrigin, TOriginSource, IHasOriginSource} from './interfaces';
 
 import core from 'core-js'
 
-var originStorage = new Map<IHasOriginSource, Origin>(),
+var originStorage = new Map<Object, Origin>(),
     unknownOrigin: IOrigin = Object.freeze({ moduleId: undefined, moduleMember: undefined });
 
-function ensureType(value: OriginSource): Origin {
+function ensureType(value: TOriginSource): Origin {
     if (value instanceof Origin) {
         return <Origin>value;
     }
@@ -37,17 +37,17 @@ export class Origin implements IOrigin {
     * @param {Function} fn The function to inspect for Origin metadata.
     * @return {Origin} Returns the Origin metadata.
     */
-    static get(fn: IHasOriginSource): IOrigin {
+    static get(fn: Object | IHasOriginSource): IOrigin {
         var origin = originStorage.get(fn);
 
         if (origin !== undefined) {
             return origin;
         }
 
-        if (typeof fn.origin === 'function') {
-            originStorage.set(fn, origin = ensureType((<() => OriginSource>fn.origin)()));
-        } else if (fn.origin !== undefined) {
-            originStorage.set(fn, origin = ensureType(<OriginSource>fn.origin));
+        if (typeof (<IHasOriginSource>fn).origin === 'function') {
+            originStorage.set(fn, origin = ensureType((<() => TOriginSource>(<IHasOriginSource>fn).origin)()));
+        } else if ((<IHasOriginSource>fn).origin !== undefined) {
+            originStorage.set(fn, origin = ensureType(<TOriginSource>(<IHasOriginSource>fn).origin));
         }
 
         return origin || unknownOrigin;
@@ -62,7 +62,7 @@ export class Origin implements IOrigin {
     * @param {origin} fn The Origin metadata to store on the function.
     * @return {Origin} Returns the Origin metadata.
     */
-    static set(fn: IHasOriginSource, origin: Origin): void {
+    static set(fn: Object, origin: IOrigin): void {
         if (Origin.get(fn) === unknownOrigin) {
             originStorage.set(fn, origin);
         }

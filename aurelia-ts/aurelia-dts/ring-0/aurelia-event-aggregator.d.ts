@@ -27,7 +27,7 @@ declare module 'aurelia-event-aggregator/interfaces' {
 
 }
 declare module 'aurelia-event-aggregator/index' {
-	import { Dictionary } from 'aurelia-tsutil';
+	import { Dictionary } from 'tsutil';
 	import { IMessageType, ISimpleEventCallback, IComplexEventCallback, IUnsubscribe, IEventAggregator, IHandler } from 'aurelia-event-aggregator/interfaces';
 	export { IMessageType, ISimpleEventCallback, IComplexEventCallback, IUnsubscribe, IEventAggregator, IHandler } from 'aurelia-event-aggregator/interfaces';
 	export class EventAggregator implements IEventAggregator {

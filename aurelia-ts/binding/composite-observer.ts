@@ -1,40 +1,42 @@
-export class CompositeObserver {
-  public subscriptions;
-  public evaluate;
-  public callback;
-  constructor(observers, evaluate){
-    this.subscriptions = new Array(observers.length);
-    this.evaluate = evaluate;
+import {IUnsubscribe, IValueObserver} from './interfaces';
 
-    for(var i = 0, ii = observers.length; i < ii; i++){
-      this.subscriptions[i] = observers[i].subscribe((newValue) => {
-        this.notify(this.evaluate());
-      });
+export class CompositeObserver implements IValueObserver {
+    public subscriptions: IUnsubscribe[];
+    public evaluate: () => any;
+    public callback: (evaluated: any) => void;
+    constructor(observers: IValueObserver[], evaluate: () => any) {
+        this.subscriptions = new Array(observers.length);
+        this.evaluate = evaluate;
+
+        for (var i = 0, ii = observers.length; i < ii; i++) {
+            this.subscriptions[i] = observers[i].subscribe((newValue) => {
+                this.notify(this.evaluate());
+            });
+        }
     }
-  }
 
-  subscribe(callback){
-    var that = this;
-    that.callback = callback;
-    return function(){
-      that.callback = null;
-    };
-  }
-
-  notify(newValue){
-    var callback = this.callback;
-
-    if(callback){
-      callback(newValue);
+    subscribe(callback: (evaluated: any) => void): IUnsubscribe {
+        var that = this;
+        that.callback = callback;
+        return function () {
+            that.callback = null;
+        };
     }
-  }
 
-  dispose(){
-    var subscriptions = this.subscriptions;
+    notify(newValue: any): void {
+        var callback = this.callback;
 
-    var i = subscriptions.length;
-    while(i--) {
-      subscriptions[i]();
+        if (callback) {
+            callback(newValue);
+        }
     }
-  }
+
+    dispose(): void {
+        var subscriptions = this.subscriptions;
+
+        var i = subscriptions.length;
+        while (i--) {
+            subscriptions[i]();
+        }
+    }
 }

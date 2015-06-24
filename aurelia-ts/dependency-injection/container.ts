@@ -1,4 +1,4 @@
-import {IMetadataKeys, InstanceKey, InstanceSource, IInjectionInfo, IParameterInfoLocator, IConstructionInfo, IHandler, IRegistration} from './interfaces';
+import {IMetadataKeys, InstanceKey, InstanceSource, IHasInjectionInfo, IParameterInfoLocator, IConstructionInfo, IHandler, IRegistration} from './interfaces';
 
 import core from 'core-js';
 import {Metadata} from 'aurelia-metadata';
@@ -113,7 +113,7 @@ export class Container {
             throw new Error('fn cannot be null or undefined.')
         }
 
-        registration = Metadata.get((<IMetadataKeys><any>Metadata).registration, fn);
+        registration = Metadata.get<IRegistration>((<IMetadataKeys><any>Metadata).registration, fn);
 
         if (registration !== undefined) {
             registration.register(this, key || fn, fn);
@@ -307,11 +307,11 @@ export class Container {
     createConstructionInfo(fn: InstanceSource): IConstructionInfo {
         var info: IConstructionInfo = <IConstructionInfo>{ activator: Metadata.getOwn((<IMetadataKeys><any>Metadata).instanceActivator, fn) || ClassActivator.instance };
 
-        if ((<IInjectionInfo>fn).inject !== undefined) {
-            if (typeof (<IInjectionInfo>fn).inject === 'function') {
-                info.keys = (<() => InstanceKey[]>(<IInjectionInfo>fn).inject)();
+        if ((<IHasInjectionInfo>fn).inject !== undefined) {
+            if (typeof (<IHasInjectionInfo>fn).inject === 'function') {
+                info.keys = (<() => InstanceKey[]>(<IHasInjectionInfo>fn).inject)();
             } else {
-                info.keys = <InstanceKey[]>(<IInjectionInfo>fn).inject;
+                info.keys = <InstanceKey[]>(<IHasInjectionInfo>fn).inject;
             }
 
             return info;

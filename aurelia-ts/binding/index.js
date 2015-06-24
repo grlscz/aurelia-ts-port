@@ -17,7 +17,6 @@ define(["require", "exports", 'aurelia-metadata', './value-converter', './event-
     exports.getChangeRecords = map_change_records_1.getChangeRecords;
     exports.ComputedPropertyObserver = computed_observation_1.ComputedPropertyObserver;
     exports.declarePropertyDependencies = computed_observation_1.declarePropertyDependencies;
-    //ES7 Decorators
     function valueConverter(nameOrTarget) {
         if (nameOrTarget === undefined || typeof nameOrTarget === 'string') {
             return function (target) {

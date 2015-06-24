@@ -7,7 +7,7 @@ export interface IActivator<T extends InstanceSource> {
     invoke(fn: T, args: Object[]): Object;
 }
 
-export interface IInjectionInfo extends InstanceSource {
+export interface IHasInjectionInfo extends InstanceSource { // no static interfaces, unfortunately
     inject: InstanceKey[]| (() => InstanceKey[]);
 }
 

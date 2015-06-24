@@ -1,14 +1,15 @@
-import {IHasDecoratorsApplicator, IDecoratorsApplicator} from './interfaces';
+import {IHasDecoratorsApplicator, IMetadata} from './interfaces';
+import {DecoratorApplicator} from './decorator-applicator';
 
 import * as meta from './reflect-metadata';
 
 function ensureDecorators(target: IHasDecoratorsApplicator) {
-    var applicator: IDecoratorsApplicator;
+    var applicator: DecoratorApplicator;
 
     if (typeof target.decorators === 'function') {
-        applicator = (<() => IDecoratorsApplicator>target.decorators)();
+        applicator = (<() => DecoratorApplicator>target.decorators)();
     } else {
-        applicator = <IDecoratorsApplicator>target.decorators;
+        applicator = <DecoratorApplicator>target.decorators;
     }
 
     if (typeof applicator._decorate === 'function') {
@@ -25,19 +26,19 @@ function ensureDecorators(target: IHasDecoratorsApplicator) {
 * @class Metadata
 * @static
 */
-export var Metadata = {
+export var Metadata: IMetadata = {
     resource: 'aurelia:resource',
     paramTypes: 'design:paramtypes',
     properties: 'design:properties',
-    get(metadataKey: any, target: Object, propertyKey?: string | symbol): any {
+    get<T>(metadataKey: any, target: Object, propertyKey?: string | symbol): T {
         if (!target) {
             return undefined;
         }
 
-        let result = Metadata.getOwn(metadataKey, target, propertyKey);
-        return result === undefined ? Metadata.get(metadataKey, Object.getPrototypeOf(target), propertyKey) : result;
+        let result: T = Metadata.getOwn<T>(metadataKey, target, propertyKey);
+        return result === undefined ? Metadata.get<T>(metadataKey, Object.getPrototypeOf(target), propertyKey) : result;
     },
-    getOwn(metadataKey: any, target: Object, propertyKey?: string | symbol): any {
+    getOwn<T>(metadataKey: any, target: Object, propertyKey?: string | symbol): T {
         if (!target) {
             return undefined;
         }
@@ -48,8 +49,8 @@ export var Metadata = {
 
         return Reflect.getOwnMetadata(metadataKey, target, propertyKey);
     },
-    getOrCreateOwn(metadataKey: any, Type: new () => any, target: Object, propertyKey?: string | symbol) {
-        let result = Metadata.getOwn(metadataKey, target, propertyKey);
+    getOrCreateOwn<T>(metadataKey: any, Type: new () => T, target: Object, propertyKey?: string | symbol): T {
+        let result: T = Metadata.getOwn<T>(metadataKey, target, propertyKey);
 
         if (result === undefined) {
             result = new Type();

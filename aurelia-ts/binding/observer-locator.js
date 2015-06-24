@@ -1,4 +1,4 @@
-define(["require", "exports", 'aurelia-task-queue', './environment', './array-observation', './map-observation', './event-manager', './dirty-checking', './property-observation', './element-observation', '../dependency-injection/index', './computed-observation'], function (require, exports, aurelia_task_queue_1, environment_1, array_observation_1, map_observation_1, event_manager_1, dirty_checking_1, property_observation_1, element_observation_1, index_1, computed_observation_1) {
+define(["require", "exports", 'aurelia-task-queue', './environment', './array-observation', './map-observation', './event-manager', './dirty-checking', './property-observation', './element-observation', 'aurelia-dependency-injection', './computed-observation'], function (require, exports, aurelia_task_queue_1, environment_1, array_observation_1, map_observation_1, event_manager_1, dirty_checking_1, property_observation_1, element_observation_1, aurelia_dependency_injection_1, computed_observation_1) {
     if (typeof Object.getPropertyDescriptor !== 'function') {
         Object.getPropertyDescriptor = function (subject, name) {
             var pd = Object.getOwnPropertyDescriptor(subject, name);
@@ -43,7 +43,7 @@ define(["require", "exports", 'aurelia-task-queue', './environment', './array-ob
             this.dirtyChecker = dirtyChecker;
             this.observationAdapters = observationAdapters;
         }
-        ObserverLocator.inject = function () { return [aurelia_task_queue_1.TaskQueue, event_manager_1.EventManager, dirty_checking_1.DirtyChecker, index_1.All.of(ObjectObservationAdapter)]; };
+        ObserverLocator.inject = function () { return [aurelia_task_queue_1.TaskQueue, event_manager_1.EventManager, dirty_checking_1.DirtyChecker, aurelia_dependency_injection_1.All.of(ObjectObservationAdapter)]; };
         ObserverLocator.prototype.getObserversLookup = function (obj) {
             return obj.__observers__ || createObserversLookup(obj);
         };
@@ -103,11 +103,11 @@ define(["require", "exports", 'aurelia-task-queue', './environment', './array-ob
                 return observerLookup.getObserver(propertyName, descriptor);
             }
             if (obj instanceof Array) {
-                observerLookup = this.getArrayObserver(obj);
+                observerLookup = this.getArrayObserver(obj); // error?
                 return observerLookup.getObserver(propertyName);
             }
             else if (obj instanceof Map) {
-                observerLookup = this.getMapObserver(obj);
+                observerLookup = this.getMapObserver(obj); // error?
                 return observerLookup.getObserver(propertyName);
             }
             return new property_observation_1.SetterObserver(this.taskQueue, obj, propertyName);

@@ -1,4 +1,4 @@
-import {Dictionary} from 'aurelia-tsutil';
+import {Dictionary} from 'tsutil';
 import {IMessageType, ISimpleEventCallback, IComplexEventCallback, IUnsubscribe, IEventAggregator, IHandler} from './interfaces';
 export {IMessageType, ISimpleEventCallback, IComplexEventCallback, IUnsubscribe, IEventAggregator, IHandler} from './interfaces';
 

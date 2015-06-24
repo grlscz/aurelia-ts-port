@@ -1,6 +1,6 @@
 import {LogLevel, ILogger, IAppender, IAppenderMedthod, IError} from './interfaces';
 export {LogLevel, ILogger, IAppender, IError} from './interfaces';
-import {Dictionary} from 'aurelia-tsutil';
+import {Dictionary} from 'tsutil';
 
 /**
  * This library is part of the Aurelia platform and contains a minimal but effective logging mechanism

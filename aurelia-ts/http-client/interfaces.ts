@@ -1,7 +1,7 @@
 ﻿import {HttpClient} from './http-client';
 import {RequestMessageProcessor} from './request-message-processor';
-import {QueryStringSource} from 'aurelia-path';
-import {Dictionary} from 'aurelia-tsutil';
+import {TQueryStringSource} from 'aurelia-path';
+import {Dictionary} from 'tsutil';
 import {Headers} from './headers';
 
 export interface ICancellablePromise<T> extends Promise<T> {
@@ -9,10 +9,10 @@ export interface ICancellablePromise<T> extends Promise<T> {
     cancel();
 }
 
-export type JSONResponseReviver = (key: any, value: any) => any;
-export type NonJSONResponseReviver = (response: any) => any;
-export type ResponseReviver = JSONResponseReviver | NonJSONResponseReviver;
-export type JSONContentReplacer = (key: string, value: any) => any;
+export interface IJSONResponseReviver { (key: any, value: any): any; }
+export interface INonJSONResponseReviver { (response: any): any; }
+export type TResponseReviver = IJSONResponseReviver | INonJSONResponseReviver;
+export interface IJSONContentReplacer { (key: string, value: any): any; }
 
 export interface IHeaders {
     headers: Dictionary<string>;
@@ -31,12 +31,12 @@ export interface IRequestMessage {
     uri: string;
     headers: Headers;
     baseUri?: string;
-    params?: Dictionary<QueryStringSource>;
+    params?: Dictionary<TQueryStringSource>;
     content?: any;
     fullUri?: string;
     responseType?: string;
-    reviver?: ResponseReviver;
-    replacer?: JSONContentReplacer;
+    reviver?: TResponseReviver;
+    replacer?: IJSONContentReplacer;
     timeout?: number;
     callbackParameterName?: string;
     withCredentials?: boolean;

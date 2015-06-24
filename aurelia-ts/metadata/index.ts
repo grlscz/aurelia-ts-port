@@ -7,5 +7,3 @@
 export {Origin} from './origin';
 export {Metadata} from './metadata';
 export {Decorators} from './decorators';
-
-export {IDecorator, ITypedDecorator} from './interfaces';

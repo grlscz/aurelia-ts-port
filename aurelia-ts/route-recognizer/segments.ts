@@ -1,4 +1,4 @@
-import {Dictionary} from 'aurelia-tsutil';
+import {Dictionary} from 'tsutil';
 import {ISegment, ICharacterSpecification} from './interfaces';
 
 const specials = [

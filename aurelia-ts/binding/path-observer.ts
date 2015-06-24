@@ -1,58 +1,60 @@
-export class PathObserver {
-  public leftObserver;
-  public disposeLeft;
-  public rightObserver;
-  public disposeRight;
-  public callback;
-  constructor(leftObserver, getRightObserver, value){
-    this.leftObserver = leftObserver;
+import {IUnsubscribe, IValueObserver, IPropertyObserver} from './interfaces';
 
-    this.disposeLeft = leftObserver.subscribe((newValue) => {
-      var newRightValue = this.updateRight(getRightObserver(newValue));
-      this.notify(newRightValue);
-    });
+export class PathObserver implements IValueObserver {
+    public leftObserver: IValueObserver;
+    public disposeLeft: IUnsubscribe;
+    public rightObserver: IPropertyObserver;
+    public disposeRight: IUnsubscribe;
+    public callback: (newValue: any) => void;
+    constructor(leftObserver: IValueObserver, getRightObserver: (value: any) => IPropertyObserver, value: any) {
+        this.leftObserver = leftObserver;
 
-    this.updateRight(getRightObserver(value));
-  }
+        this.disposeLeft = leftObserver.subscribe((newValue) => {
+            var newRightValue = this.updateRight(getRightObserver(newValue));
+            this.notify(newRightValue);
+        });
 
-  updateRight(observer){
-    this.rightObserver = observer;
-
-    if(this.disposeRight){
-      this.disposeRight();
+        this.updateRight(getRightObserver(value));
     }
 
-    if(!observer){
-      return null;
+    updateRight(observer: IPropertyObserver): any {
+        this.rightObserver = observer;
+
+        if (this.disposeRight) {
+            this.disposeRight();
+        }
+
+        if (!observer) {
+            return null;
+        }
+
+        this.disposeRight = observer.subscribe(newValue => this.notify(newValue));
+        return observer.getValue();
     }
 
-    this.disposeRight = observer.subscribe(newValue => this.notify(newValue));
-    return observer.getValue();
-  }
-
-  subscribe(callback){
-    var that = this;
-    that.callback = callback;
-    return function(){
-      that.callback = null;
-    };
-  }
-
-  notify(newValue){
-    var callback = this.callback;
-
-    if(callback){
-      callback(newValue);
-    }
-  }
-
-  dispose(){
-    if(this.disposeLeft){
-      this.disposeLeft();
+    subscribe(callback: (newValue: any) => void): IUnsubscribe {
+        var that = this;
+        that.callback = callback;
+        return function () {
+            that.callback = null;
+        };
     }
 
-    if(this.disposeRight){
-      this.disposeRight();
+    notify(newValue: any): void {
+        var callback = this.callback;
+
+        if (callback) {
+            callback(newValue);
+        }
     }
-  }
+
+    dispose(): void {
+        if (this.disposeLeft) {
+            this.disposeLeft();
+        }
+
+        if (this.disposeRight) {
+            this.disposeRight();
+        }
+    }
 }

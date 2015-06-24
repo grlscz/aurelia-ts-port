@@ -1,4 +1,4 @@
-﻿import {Dictionary} from 'aurelia-tsutil';
+﻿import {Dictionary} from 'tsutil';
 
 // segments
 export interface ISegment {
@@ -53,10 +53,10 @@ export interface IRoure {
     handler: IHandler;
 }
 
-export interface IRoutesArray extends Array<RoutesCollection> {
+export interface IRoutesArray extends Array<TRoutesCollection> {
 }
 
-export type RoutesCollection = IRoure | IRoutesArray; // if deep structure is unintended - make it "IRoure | Array<IRoute>"
+export type TRoutesCollection = IRoure | IRoutesArray; // if deep structure is unintended - make it "IRoure | Array<IRoute>"
 
 
 // results

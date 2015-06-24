@@ -5,7 +5,7 @@ declare module 'aurelia-dependency-injection/interfaces' {
 	export interface IActivator<T extends InstanceSource> {
 	    invoke(fn: T, args: Object[]): Object;
 	}
-	export interface IInjectionInfo extends InstanceSource {
+	export interface IHasInjectionInfo extends InstanceSource {
 	    inject: InstanceKey[] | (() => InstanceKey[]);
 	}
 	export interface IRegistration {
@@ -355,25 +355,19 @@ declare module 'aurelia-dependency-injection/container' {
 
 }
 declare module 'aurelia-dependency-injection/index' {
-	import { InstanceKey, InstanceSource, IRegistration, IActivator } from 'aurelia-dependency-injection/interfaces';
-	export { IActivator, IInjectionInfo, IRegistration } from 'aurelia-dependency-injection/interfaces';
-	/**
-	 * A lightweight, extensible dependency injection container for JavaScript.
-	 *
-	 * @module dependency-injection
-	 */
-	import { ITypedDecorator } from 'aurelia-metadata';
+	import { InstanceKey, IRegistration, IActivator } from 'aurelia-dependency-injection/interfaces';
+	export { IActivator, IHasInjectionInfo, IRegistration } from 'aurelia-dependency-injection/interfaces';
 	export { TransientRegistration, SingletonRegistration, Resolver, Lazy, All, Optional, Parent, ClassActivator, FactoryActivator } from 'aurelia-dependency-injection/metadata';
 	export { Container } from 'aurelia-dependency-injection/container';
 	export function autoinject(target: Function): void;
-	export function autoinject(): ITypedDecorator<Function>;
-	export function inject(...rest: InstanceKey[]): ITypedDecorator<InstanceSource>;
-	export function registration(value: IRegistration): ITypedDecorator<InstanceSource>;
-	export function transient(key?: InstanceKey): ITypedDecorator<InstanceSource>;
-	export function singleton(registerInChild: boolean): ITypedDecorator<InstanceSource>;
-	export function singleton(key: InstanceKey, registerInChild?: boolean): ITypedDecorator<InstanceSource>;
-	export function instanceActivator<T>(value: IActivator<T>): ITypedDecorator<T>;
-	export function factory(): ITypedDecorator<(...args) => Object>;
+	export function autoinject(): ClassDecorator;
+	export function inject(...rest: InstanceKey[]): ClassDecorator;
+	export function registration(value: IRegistration): ClassDecorator;
+	export function transient(key?: InstanceKey): ClassDecorator;
+	export function singleton(registerInChild: boolean): ClassDecorator;
+	export function singleton(key: InstanceKey, registerInChild?: boolean): ClassDecorator;
+	export function instanceActivator<T extends Function>(value: IActivator<T>): ClassDecorator;
+	export function factory(): ClassDecorator;
 
 }
 declare module 'aurelia-dependency-injection' {

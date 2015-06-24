@@ -1,6 +1,6 @@
-﻿import {Dictionary} from 'aurelia-tsutil';
+﻿import {Dictionary} from 'tsutil';
 
-export type QueryStringScalarValueSource = string | (() => string);
+export type TQueryStringScalarValueSource = string | (() => string);
 // traditional:
 //   scalar
 //   or array of scalars
@@ -8,6 +8,6 @@ export type QueryStringScalarValueSource = string | (() => string);
 //   scalar
 //   or dictionary of non-traditional
 //   or array of non-traditional
-export type QueryStringSource = QueryStringScalarValueSource | IQueryStringDictionarySource | IQueryStringArraySource;
-export interface IQueryStringDictionarySource extends Dictionary<QueryStringSource> { }
-export interface IQueryStringArraySource extends Array<QueryStringSource> { }
+export type TQueryStringSource = TQueryStringScalarValueSource | IQueryStringDictionarySource | IQueryStringArraySource;
+export interface IQueryStringDictionarySource extends Dictionary<TQueryStringSource> { }
+export interface IQueryStringArraySource extends Array<TQueryStringSource> { }

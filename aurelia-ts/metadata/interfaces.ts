@@ -1,12 +1,7 @@
-﻿import {Dictionary} from 'aurelia-tsutil';
-import {Origin} from './origin';
+﻿import {DecoratorApplicator} from './decorator-applicator';
 
-export interface IHasDecoratorsApplicator {
-    decorators: IDecoratorsApplicator | (() => IDecoratorsApplicator);
-}
-
-export interface IDecoratorsApplicator {
-    _decorate(any): void;
+export interface IHasDecoratorsApplicator extends Function {
+    decorators: DecoratorApplicator | (() => DecoratorApplicator);
 }
 
 export interface IOrigin {
@@ -14,22 +9,28 @@ export interface IOrigin {
     moduleMember: string;
 }
 
-export type OriginSource = string | Origin;
+export type TOriginSource = string | IOrigin;
 
 export interface IHasOriginSource {
-    origin: OriginSource | (() => OriginSource);
-}
-
-// IDecorator<T = Object> https://github.com/Microsoft/TypeScript/issues/2175
-export interface ITypedDecorator<T> {
-    (traget: T): void;
-}
-export interface IDecorator extends ITypedDecorator<Object> {
+    origin: TOriginSource | (() => TOriginSource);
 }
 
 export interface IAddDecorator {
-    (...args): IDecoratorsApplicator;
+    (...args): DecoratorApplicator;
 }
 
-export interface IDecorators extends Dictionary<IAddDecorator> {
+
+export interface IMetadata {
+    // metadata keys
+    resource: string;
+    paramTypes: string;
+    properties: string;
+    // for constructor
+    get<T>(metadataKey: any, target: Object): T;
+    getOwn<T>(metadataKey: any, target: Object): T;
+    getOrCreateOwn<T>(metadataKey: any, Type: new () => T, target: Object): T;
+    // for property
+    get<T>(metadataKey: any, target: Object, propertyKey: string | symbol): T;
+    getOwn<T>(metadataKey: any, target: Object, propertyKey: string | symbol): T;
+    getOrCreateOwn<T>(metadataKey: any, Type: new () => T, target: Object, propertyKey: string | symbol): T;
 }

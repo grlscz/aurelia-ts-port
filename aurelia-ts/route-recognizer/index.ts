@@ -1,5 +1,5 @@
-import {Dictionary} from 'aurelia-tsutil';
-import {IState, IAcceptingState, IHandler, IHandlerWithParameterNames, ISegmentTypesInfo, IRoure, IRoutesArray, RoutesCollection, IRoureMatch, IQueryParams, ISegment} from './interfaces';
+import {Dictionary} from 'tsutil';
+import {IState, IAcceptingState, IHandler, IHandlerWithParameterNames, ISegmentTypesInfo, IRoure, IRoutesArray, TRoutesCollection, IRoureMatch, IQueryParams, ISegment} from './interfaces';
 
 import core from 'core-js';
 import {State} from './state';
@@ -34,7 +34,7 @@ export class RouteRecognizer {
      * @method add
      * @param {Object} route The route to add.
      */
-    add(route: RoutesCollection): IAcceptingState {
+    add(route: TRoutesCollection): IAcceptingState {
         if (Array.isArray(route)) {
             for (let r of <IRoutesArray>route) {
                 this.add(r);

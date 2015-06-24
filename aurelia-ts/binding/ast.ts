@@ -1,1040 +1,1043 @@
+import {IValueObserver, IValueInfo, IValueConverter, IValueConvertersLookup, IExpression, IBinding, IBindableExpression, IAssignableExpression, I__ExpressionTraversal, I__ExpressionVisitor} from './interfaces';
+import {ObserverLocator} from './observer-locator';
+
 import {PathObserver} from './path-observer';
 import {CompositeObserver} from './composite-observer';
 import {AccessKeyedObserver} from './access-keyed-observer';
 
 export class Expression {
-  public isChain;
-  public isAssignable;
-  constructor(){
-    this.isChain = false;
-    this.isAssignable = false;
-  }
+    public isChain: boolean;
+    public isAssignable: boolean;
+    constructor() {
+        this.isChain = false;
+        this.isAssignable = false;
+    }
 
-  evaluate(){
-    throw new Error(`Cannot evaluate ${this}`);
-  }
+    evaluate(scope: Object, valueConverters: IValueConvertersLookup): any {
+        throw new Error(`Cannot evaluate ${this}`);
+    }
 
-  assign(){
-    throw new Error(`Cannot assign to ${this}`);
-  }
+    assign(scope: Object, value: any, valueConverters: IValueConvertersLookup): any {
+        throw new Error(`Cannot assign to ${this}`);
+    }
 
-  toString(){
-    return Unparser.unparse(this);
-  }
+    toString(): string {
+        return Unparser.unparse(<any>this);
+    }
 }
 
-export class Chain extends Expression {
-  public expressions;
-  constructor(expressions){
-    super();
+export class Chain extends Expression implements IExpression, I__ExpressionTraversal {
+    public expressions: IExpression[];
+    constructor(expressions: IExpression[]) {
+        super();
 
-    this.expressions = expressions;
-    this.isChain = true;
-  }
-
-  evaluate(scope?, valueConverters?) {
-    var result,
-        expressions = this.expressions,
-        length = expressions.length,
-        i, last;
-
-    for (i = 0; i < length; ++i) {
-      last = expressions[i].evaluate(scope, valueConverters);
-
-      if (last !== null) {
-        result = last;
-      }
+        this.expressions = expressions;
+        this.isChain = true;
     }
 
-    return result;
-  }
+    evaluate(scope: Object, valueConverters?: IValueConvertersLookup): any {
+        var result: any,
+            expressions = this.expressions,
+            length = expressions.length,
+            i: number, last: number;
 
-  accept(visitor){
-    visitor.visitChain(this);
-  }
+        for (i = 0; i < length; ++i) {
+            last = expressions[i].evaluate(scope, valueConverters);
+
+            if (last !== null) {
+                result = last;
+            }
+        }
+
+        return result;
+    }
+
+    accept(visitor: I__ExpressionVisitor): void {
+        visitor.visitChain(this);
+    }
 }
 
-export class ValueConverter extends Expression {
-  public expression;
-  public name;
-  public args;
-  public allArgs;
-  constructor(expression, name, args, allArgs){
-    super();
+export class ValueConverter extends Expression implements IAssignableExpression, I__ExpressionTraversal {
+    public expression: IExpression;
+    public name: string;
+    public args: IBindableExpression[];
+    public allArgs: IBindableExpression[];
+    constructor(expression: IExpression, name: string, args: IBindableExpression[], allArgs: IBindableExpression[]) {
+        super();
 
-    this.expression = expression;
-    this.name = name;
-    this.args = args;
-    this.allArgs = allArgs;
-  }
-
-  evaluate(scope?, valueConverters?){
-    var converter = valueConverters(this.name);
-    if(!converter){
-      throw new Error(`No ValueConverter named "${this.name}" was found!`);
+        this.expression = expression;
+        this.name = name;
+        this.args = args;
+        this.allArgs = allArgs;
     }
 
-    if('toView' in converter){
-      return converter.toView.apply(converter, evalList(scope, this.allArgs, valueConverters));
+    evaluate(scope: Object, valueConverters: IValueConvertersLookup): any {
+        var converter = valueConverters(this.name);
+        if (!converter) {
+            throw new Error(`No ValueConverter named "${this.name}" was found!`);
+        }
+
+        if ('toView' in converter) {
+            return converter.toView.apply(converter, evalList(scope, this.allArgs, valueConverters));
+        }
+
+        return this.allArgs[0].evaluate(scope, valueConverters);
     }
 
-    return this.allArgs[0].evaluate(scope, valueConverters);
-  }
+    assign(scope: Object, value: any, valueConverters: IValueConvertersLookup): any {
+        var converter = valueConverters(this.name);
+        if (!converter) {
+            throw new Error(`No ValueConverter named "${this.name}" was found!`);
+        }
 
-  assign(scope?, value?, valueConverters?){
-    var converter = valueConverters(this.name);
-    if(!converter){
-      throw new Error(`No ValueConverter named "${this.name}" was found!`);
+        if ('fromView' in converter) {
+            value = converter.fromView.apply(converter, [value].concat(evalList(scope, this.args, valueConverters)));
+        }
+
+        return (<IAssignableExpression>this.allArgs[0]).assign(scope, value, valueConverters);
     }
 
-    if('fromView' in converter){
-      value = converter.fromView.apply(converter, [value].concat(evalList(scope, this.args, valueConverters)));
+    accept(visitor: I__ExpressionVisitor): void {
+        visitor.visitValueConverter(this);
     }
 
-    return this.allArgs[0].assign(scope, value, valueConverters);
-  }
+    connect(binding: IBinding, scope: Object): IValueInfo {
+        var observer: IValueObserver,
+            childObservers: IValueObserver[] = [],
+            i: number, ii: number, exp: IBindableExpression, expInfo: IValueInfo;
 
-  accept(visitor){
-    visitor.visitValueConverter(this);
-  }
+        for (i = 0, ii = this.allArgs.length; i < ii; ++i) {
+            exp = this.allArgs[i]
+            expInfo = exp.connect(binding, scope);
 
-  connect(binding, scope){
-    var observer,
-        childObservers = [],
-        i, ii, exp, expInfo;
+            if (expInfo.observer) {
+                childObservers.push(expInfo.observer);
+            }
+        }
 
-    for(i = 0, ii = this.allArgs.length; i<ii; ++i){
-      exp = this.allArgs[i]
-      expInfo = exp.connect(binding, scope);
+        if (childObservers.length) {
+            observer = new CompositeObserver(childObservers, () => {
+                return this.evaluate(scope, binding.valueConverterLookupFunction);
+            });
+        }
 
-      if(expInfo.observer){
-        childObservers.push(expInfo.observer);
-      }
+        return {
+            value: this.evaluate(scope, binding.valueConverterLookupFunction),
+            observer: observer
+        };
     }
-
-    if(childObservers.length){
-      observer = new CompositeObserver(childObservers, () => {
-        return this.evaluate(scope, binding.valueConverterLookupFunction);
-      });
-    }
-
-    return {
-      value:this.evaluate(scope, binding.valueConverterLookupFunction),
-      observer:observer
-    };
-  }
 }
 
-export class Assign extends Expression {
-  public target;
-  public value;
-  constructor(target, value){
-    super();
+export class Assign extends Expression implements IBindableExpression, I__ExpressionTraversal {
+    public target: IAssignableExpression;
+    public value: any;
+    constructor(target: IAssignableExpression, value: any) {
+        super();
 
-    this.target = target;
-    this.value = value;
-  }
+        this.target = target;
+        this.value = value;
+    }
 
-  evaluate(scope?, valueConverters?){
-    return this.target.assign(scope, this.value.evaluate(scope, valueConverters));
-  }
+    evaluate(scope: Object, valueConverters?: IValueConvertersLookup): any {
+        return this.target.assign(scope, this.value.evaluate(scope, valueConverters));
+    }
 
-  accept(vistor){
-    vistor.visitAssign(this);
-  }
+    accept(vistor: I__ExpressionVisitor): void {
+        vistor.visitAssign(this);
+    }
 
-  connect(binding, scope){
-    return { value: this.evaluate(scope, binding.valueConverterLookupFunction) };
-  }
+    connect(binding: IBinding, scope: Object): IValueInfo {
+        return { value: this.evaluate(scope, binding.valueConverterLookupFunction) };
+    }
 }
 
-export class Conditional extends Expression {
-  public condition;
-  public yes;
-  public no;
-  constructor(condition, yes, no){
-    super();
+export class Conditional extends Expression implements IBindableExpression, I__ExpressionTraversal {
+    public condition: IBindableExpression;
+    public yes: IBindableExpression;
+    public no: IBindableExpression;
+    constructor(condition: IBindableExpression, yes: IBindableExpression, no: IBindableExpression) {
+        super();
 
-    this.condition = condition;
-    this.yes = yes;
-    this.no = no;
-  }
-
-  evaluate(scope?, valueConverters?){
-    return (!!this.condition.evaluate(scope)) ? this.yes.evaluate(scope) : this.no.evaluate(scope);
-  }
-
-  accept(visitor){
-    visitor.visitConditional(this);
-  }
-
-  connect(binding, scope){
-    var conditionInfo = this.condition.connect(binding, scope),
-        yesInfo = this.yes.connect(binding, scope),
-        noInfo = this.no.connect(binding, scope),
-        childObservers = [],
-        observer;
-
-    if(conditionInfo.observer){
-      childObservers.push(conditionInfo.observer);
+        this.condition = condition;
+        this.yes = yes;
+        this.no = no;
     }
 
-    if(yesInfo.observer){
-      childObservers.push(yesInfo.observer);
+    evaluate(scope: Object, valueConverters?: IValueConvertersLookup): any {
+        return (!!this.condition.evaluate(scope)) ? this.yes.evaluate(scope) : this.no.evaluate(scope);
     }
 
-    if(noInfo.observer){
-      childObservers.push(noInfo.observer);
+    accept(visitor: I__ExpressionVisitor): void {
+        visitor.visitConditional(this);
     }
 
-    if(childObservers.length){
-      observer = new CompositeObserver(childObservers, () => {
-        return this.evaluate(scope, binding.valueConverterLookupFunction);
-      });
-    }
+    connect(binding: IBinding, scope: Object): IValueInfo {
+        var conditionInfo = this.condition.connect(binding, scope),
+            yesInfo = this.yes.connect(binding, scope),
+            noInfo = this.no.connect(binding, scope),
+            childObservers: IValueObserver[] = [],
+            observer: IValueObserver;
 
-    return {
-      value:(!!conditionInfo.value) ? yesInfo.value : noInfo.value,
-      observer: observer
-    };
-  }
+        if (conditionInfo.observer) {
+            childObservers.push(conditionInfo.observer);
+        }
+
+        if (yesInfo.observer) {
+            childObservers.push(yesInfo.observer);
+        }
+
+        if (noInfo.observer) {
+            childObservers.push(noInfo.observer);
+        }
+
+        if (childObservers.length) {
+            observer = new CompositeObserver(childObservers, () => {
+                return this.evaluate(scope, binding.valueConverterLookupFunction);
+            });
+        }
+
+        return {
+            value: (!!conditionInfo.value) ? yesInfo.value : noInfo.value,
+            observer: observer
+        };
+    }
 }
 
-export class AccessScope extends Expression {
-  public name;
-  public isAssignable;
-  constructor(name){
-    super();
+export class AccessScope extends Expression implements IAssignableExpression, I__ExpressionTraversal {
+    public name: string;
+    public isAssignable: boolean;
+    constructor(name: string) {
+        super();
 
-    this.name = name;
-    this.isAssignable = true;
-  }
-
-  evaluate(scope?, valueConverters?){
-    return scope[this.name];
-  }
-
-  assign(scope?, value?){
-    return scope[this.name] = value;
-  }
-
-  accept(visitor){
-    visitor.visitAccessScope(this);
-  }
-
-  connect(binding, scope){
-    var observer = binding.getObserver(scope, this.name);
-
-    return {
-      value: observer.getValue(),
-      observer: observer
+        this.name = name;
+        this.isAssignable = true;
     }
-  }
+
+    evaluate(scope: Object, valueConverters?: IValueConvertersLookup): any {
+        return scope[this.name];
+    }
+
+    assign(scope: Object, value: any): any {
+        return scope[this.name] = value;
+    }
+
+    accept(visitor: I__ExpressionVisitor): void {
+        visitor.visitAccessScope(this);
+    }
+
+    connect(binding: IBinding, scope: Object): IValueInfo {
+        var observer = binding.getObserver(scope, this.name);
+
+        return {
+            value: observer.getValue(),
+            observer: observer
+        }
+    }
 }
 
-export class AccessMember extends Expression {
-  public object;
-  public name;
-  public isAssignable;
-  constructor(object, name){
-    super();
+export class AccessMember extends Expression implements IAssignableExpression, I__ExpressionTraversal {
+    public object: IAssignableExpression;
+    public name: string;
+    public isAssignable: boolean;
+    constructor(object: IAssignableExpression, name: string) {
+        super();
 
-    this.object = object;
-    this.name = name;
-    this.isAssignable = true;
-  }
-
-  evaluate(scope?, valueConverters?){
-    var instance = this.object.evaluate(scope, valueConverters);
-    return instance === null || instance === undefined
-      ? instance
-      : instance[this.name];
-  }
-
-  assign(scope?, value?){
-    var instance = this.object.evaluate(scope);
-
-    if(instance === null || instance === undefined){
-      instance = {};
-      this.object.assign(scope, instance);
+        this.object = object;
+        this.name = name;
+        this.isAssignable = true;
     }
 
-    return instance[this.name] = value;
-  }
-
-  accept(visitor){
-    visitor.visitAccessMember(this);
-  }
-
-  connect(binding, scope){
-    var info = this.object.connect(binding, scope),
-        objectInstance = info.value,
-        objectObserver = info.observer,
-        observer;
-
-    if(objectObserver){
-      observer = new PathObserver(
-        objectObserver,
-        value => {
-          if(value == null || value == undefined){
-            return value;
-          }
-
-          return binding.getObserver(value, this.name)
-        },
-        objectInstance
-        );
-    }else{
-      observer = binding.getObserver(objectInstance, this.name);
+    evaluate(scope: Object, valueConverters?: IValueConvertersLookup): any {
+        var instance = this.object.evaluate(scope, valueConverters);
+        return instance === null || instance === undefined
+            ? instance
+            : instance[this.name];
     }
 
-    return {
-      value: objectInstance == null ? null : objectInstance[this.name], //TODO: use prop abstraction
-      observer: observer
+    assign(scope: Object, value: any): any {
+        var instance = this.object.evaluate(scope);
+
+        if (instance === null || instance === undefined) {
+            instance = {};
+            this.object.assign(scope, instance);
+        }
+
+        return instance[this.name] = value;
     }
-  }
+
+    accept(visitor: I__ExpressionVisitor): void {
+        visitor.visitAccessMember(this);
+    }
+
+    connect(binding: IBinding, scope: Object): IValueInfo {
+        var info = this.object.connect(binding, scope),
+            objectInstance = info.value,
+            objectObserver = info.observer,
+            observer: IValueObserver;
+
+        if (objectObserver) {
+            observer = new PathObserver(
+                objectObserver,
+                value => {
+                    if (value == null || value == undefined) {
+                        return value;
+                    }
+
+                    return binding.getObserver(value, this.name)
+                },
+                objectInstance
+                );
+        } else {
+            observer = binding.getObserver(objectInstance, this.name);
+        }
+
+        return {
+            value: objectInstance == null ? null : objectInstance[this.name], //TODO: use prop abstraction
+            observer: observer
+        }
+    }
 }
 
-export class AccessKeyed extends Expression {
-  public object;
-  public key;
-  public isAssignable;
-  constructor(object, key){
-    super();
+export class AccessKeyed extends Expression implements IAssignableExpression, I__ExpressionTraversal {
+    public object: IBindableExpression;
+    public key: IBindableExpression;
+    public isAssignable: boolean;
+    constructor(object: IBindableExpression, key: IBindableExpression) {
+        super();
 
-    this.object = object;
-    this.key = key;
-    this.isAssignable = true;
-  }
+        this.object = object;
+        this.key = key;
+        this.isAssignable = true;
+    }
 
-  evaluate(scope?, valueConverters?){
-    var instance = this.object.evaluate(scope, valueConverters);
-    var lookup = this.key.evaluate(scope, valueConverters);
-    return getKeyed(instance, lookup);
-  }
+    evaluate(scope: Object, valueConverters?: IValueConvertersLookup): any {
+        var instance = this.object.evaluate(scope, valueConverters);
+        var lookup = this.key.evaluate(scope, valueConverters);
+        return getKeyed(instance, lookup);
+    }
 
-  assign(scope?, value?){
-    var instance = this.object.evaluate(scope);
-    var lookup = this.key.evaluate(scope);
-    return setKeyed(instance, lookup, value);
-  }
+    assign(scope: Object, value: any): any {
+        var instance = this.object.evaluate(scope);
+        var lookup = this.key.evaluate(scope);
+        return setKeyed(instance, lookup, value);
+    }
 
-  accept(visitor){
-    visitor.visitAccessKeyed(this);
-  }
+    accept(visitor: I__ExpressionVisitor): void {
+        visitor.visitAccessKeyed(this);
+    }
 
-  connect(binding, scope){
-    var objectInfo = this.object.connect(binding, scope),
-        keyInfo = this.key.connect(binding, scope),
-          observer = new AccessKeyedObserver(objectInfo, keyInfo, binding.observerLocator,
-            () => this.evaluate(scope, binding.valueConverterLookupFunction));
+    connect(binding: IBinding, scope: Object): IValueInfo {
+        var objectInfo = this.object.connect(binding, scope),
+            keyInfo = this.key.connect(binding, scope),
+            observer = new AccessKeyedObserver(objectInfo, keyInfo, binding.observerLocator,
+                () => this.evaluate(scope, binding.valueConverterLookupFunction));
 
-    return {
-      value:this.evaluate(scope, binding.valueConverterLookupFunction),
-      observer:observer
-    };
-  }
+        return {
+            value: this.evaluate(scope, binding.valueConverterLookupFunction),
+            observer: observer
+        };
+    }
 }
 
-export class CallScope extends Expression {
-  public name;
-  public args;
-  constructor(name, args){
-    super();
+export class CallScope extends Expression implements IBindableExpression, I__ExpressionTraversal {
+    public name: string;
+    public args: IBindableExpression[];
+    constructor(name: string, args: IBindableExpression[]) {
+        super();
 
-    this.name = name;
-    this.args = args;
-  }
-
-  evaluate(scope?, valueConverters?, args?){
-    args = args || evalList(scope, this.args, valueConverters);
-    return ensureFunctionFromMap(scope, this.name).apply(scope, args);
-  }
-
-  accept(visitor){
-    visitor.visitCallScope(this);
-  }
-
-  connect(binding, scope){
-    var observer,
-        childObservers = [],
-        i, ii, exp, expInfo;
-
-    for(i = 0, ii = this.args.length; i<ii; ++i){
-      exp = this.args[i];
-      expInfo = exp.connect(binding, scope);
-
-      if(expInfo.observer){
-        childObservers.push(expInfo.observer);
-      }
+        this.name = name;
+        this.args = args;
     }
 
-    if(childObservers.length){
-      observer = new CompositeObserver(childObservers, () => {
-        return this.evaluate(scope, binding.valueConverterLookupFunction);
-      });
+    evaluate(scope: Object, valueConverters?: IValueConvertersLookup, args?: any[]): any {
+        args = args || evalList(scope, this.args, valueConverters);
+        return ensureFunctionFromMap(scope, this.name).apply(scope, args);
     }
 
-    return {
-      value:this.evaluate(scope, binding.valueConverterLookupFunction),
-      observer:observer
-    };
-  }
+    accept(visitor: I__ExpressionVisitor): void {
+        visitor.visitCallScope(this);
+    }
+
+    connect(binding: IBinding, scope: Object): IValueInfo {
+        var observer: IValueObserver,
+            childObservers: IValueObserver[] = [],
+            i: number, ii: number, exp: IBindableExpression, expInfo: IValueInfo;
+
+        for (i = 0, ii = this.args.length; i < ii; ++i) {
+            exp = this.args[i];
+            expInfo = exp.connect(binding, scope);
+
+            if (expInfo.observer) {
+                childObservers.push(expInfo.observer);
+            }
+        }
+
+        if (childObservers.length) {
+            observer = new CompositeObserver(childObservers, () => {
+                return this.evaluate(scope, binding.valueConverterLookupFunction);
+            });
+        }
+
+        return {
+            value: this.evaluate(scope, binding.valueConverterLookupFunction),
+            observer: observer
+        };
+    }
 }
 
-export class CallMember extends Expression {
-  public object;
-  public name;
-  public args;
-  constructor(object, name, args){
-    super();
+export class CallMember extends Expression implements IBindableExpression, I__ExpressionTraversal {
+    public object: IBindableExpression;
+    public name: string;
+    public args: IBindableExpression[];
+    constructor(object: IBindableExpression, name: string, args: IBindableExpression[]) {
+        super();
 
-    this.object = object;
-    this.name = name;
-    this.args = args;
-  }
-
-  evaluate(scope?, valueConverters?, args?){
-    var instance = this.object.evaluate(scope, valueConverters);
-    args = args || evalList(scope, this.args, valueConverters);
-    return ensureFunctionFromMap(instance, this.name).apply(instance, args);
-  }
-
-  accept(visitor){
-    visitor.visitCallMember(this);
-  }
-
-  connect(binding, scope){
-    var observer,
-        objectInfo = this.object.connect(binding, scope),
-        childObservers = [],
-        i, ii, exp, expInfo;
-
-    if(objectInfo.observer){
-      childObservers.push(objectInfo.observer);
+        this.object = object;
+        this.name = name;
+        this.args = args;
     }
 
-    for(i = 0, ii = this.args.length; i<ii; ++i){
-      exp = this.args[i];
-      expInfo = exp.connect(binding, scope);
-
-      if(expInfo.observer){
-        childObservers.push(expInfo.observer);
-      }
+    evaluate(scope: Object, valueConverters?: IValueConvertersLookup, args?: any[]) {
+        var instance = this.object.evaluate(scope, valueConverters);
+        args = args || evalList(scope, this.args, valueConverters);
+        return ensureFunctionFromMap(instance, this.name).apply(instance, args);
     }
 
-    if(childObservers.length){
-      observer = new CompositeObserver(childObservers, () => {
-        return this.evaluate(scope, binding.valueConverterLookupFunction);
-      });
+    accept(visitor: I__ExpressionVisitor): void {
+        visitor.visitCallMember(this);
     }
 
-    return {
-      value:this.evaluate(scope, binding.valueConverterLookupFunction),
-      observer:observer
-    };
-  }
+    connect(binding: IBinding, scope: Object): IValueInfo {
+        var observer: IValueObserver,
+            objectInfo = this.object.connect(binding, scope),
+            childObservers: IValueObserver[] = [],
+            i: number, ii: number, exp: IBindableExpression, expInfo: IValueInfo;
+
+        if (objectInfo.observer) {
+            childObservers.push(objectInfo.observer);
+        }
+
+        for (i = 0, ii = this.args.length; i < ii; ++i) {
+            exp = this.args[i];
+            expInfo = exp.connect(binding, scope);
+
+            if (expInfo.observer) {
+                childObservers.push(expInfo.observer);
+            }
+        }
+
+        if (childObservers.length) {
+            observer = new CompositeObserver(childObservers, () => {
+                return this.evaluate(scope, binding.valueConverterLookupFunction);
+            });
+        }
+
+        return {
+            value: this.evaluate(scope, binding.valueConverterLookupFunction),
+            observer: observer
+        };
+    }
 }
 
-export class CallFunction extends Expression {
-  public func;
-  public args;
-  constructor(func,args){
-    super();
+export class CallFunction extends Expression implements IBindableExpression, I__ExpressionTraversal {
+    public func: IBindableExpression;
+    public args: IBindableExpression[];
+    constructor(func: IBindableExpression, args: IBindableExpression[]) {
+        super();
 
-    this.func = func;
-    this.args = args;
-  }
-
-  evaluate(scope?, valueConverters?, args?){
-    var func = this.func.evaluate(scope, valueConverters);
-
-    if (typeof func !== 'function') {
-      throw new Error(`${this.func} is not a function`);
-    } else {
-      return func.apply(null, args || evalList(scope, this.args, valueConverters));
-    }
-  }
-
-  accept(visitor){
-    visitor.visitCallFunction(this);
-  }
-
-  connect(binding, scope){
-    var observer,
-        funcInfo = this.func.connect(binding, scope),
-        childObservers = [],
-        i, ii, exp, expInfo;
-
-    if(funcInfo.observer){
-      childObservers.push(funcInfo.observer);
+        this.func = func;
+        this.args = args;
     }
 
-    for(i = 0, ii = this.args.length; i<ii; ++i){
-      exp = this.args[i];
-      expInfo = exp.connect(binding, scope);
+    evaluate(scope: Object, valueConverters?: IValueConvertersLookup, args?: any[]) {
+        var func: Function = this.func.evaluate(scope, valueConverters);
 
-      if(expInfo.observer){
-        childObservers.push(expInfo.observer);
-      }
+        if (typeof func !== 'function') {
+            throw new Error(`${this.func} is not a function`);
+        } else {
+            return func.apply(null, args || evalList(scope, this.args, valueConverters));
+        }
     }
 
-    if(childObservers.length){
-      observer = new CompositeObserver(childObservers, () => {
-        return this.evaluate(scope, binding.valueConverterLookupFunction);
-      });
+    accept(visitor: I__ExpressionVisitor): void {
+        visitor.visitCallFunction(this);
     }
 
-    return {
-      value:this.evaluate(scope, binding.valueConverterLookupFunction),
-      observer:observer
-    };
-  }
+    connect(binding: IBinding, scope: Object): IValueInfo {
+        var observer: IValueObserver,
+            funcInfo = this.func.connect(binding, scope),
+            childObservers: IValueObserver[] = [],
+            i: number, ii: number, exp: IBindableExpression, expInfo: IValueInfo;
+
+        if (funcInfo.observer) {
+            childObservers.push(funcInfo.observer);
+        }
+
+        for (i = 0, ii = this.args.length; i < ii; ++i) {
+            exp = this.args[i];
+            expInfo = exp.connect(binding, scope);
+
+            if (expInfo.observer) {
+                childObservers.push(expInfo.observer);
+            }
+        }
+
+        if (childObservers.length) {
+            observer = new CompositeObserver(childObservers, () => {
+                return this.evaluate(scope, binding.valueConverterLookupFunction);
+            });
+        }
+
+        return {
+            value: this.evaluate(scope, binding.valueConverterLookupFunction),
+            observer: observer
+        };
+    }
 }
 
-export class Binary extends Expression {
-  public operation;
-  public left;
-  public right;
-  constructor(operation, left, right){
-    super();
+export class Binary extends Expression implements IBindableExpression, I__ExpressionTraversal {
+    public operation: string;
+    public left: IBindableExpression;
+    public right: IBindableExpression;
+    constructor(operation: string, left: IBindableExpression, right: IBindableExpression) {
+        super();
 
-    this.operation = operation;
-    this.left = left;
-    this.right = right;
-  }
-
-  evaluate(scope?, valueConverters?){
-    var left = this.left.evaluate(scope);
-
-    switch (this.operation) {
-      case '&&': return !!left && !!this.right.evaluate(scope);
-      case '||': return !!left || !!this.right.evaluate(scope);
+        this.operation = operation;
+        this.left = left;
+        this.right = right;
     }
 
-    var right = this.right.evaluate(scope);
+    evaluate(scope: Object, valueConverters?: IValueConvertersLookup): any {
+        var left = this.left.evaluate(scope);
 
-    switch (this.operation) {
-      case '==' : return left == right;
-      case '===': return left === right;
-      case '!=' : return left != right;
-      case '!==': return left !== right;
+        switch (this.operation) {
+            case '&&': return !!left && !!this.right.evaluate(scope);
+            case '||': return !!left || !!this.right.evaluate(scope);
+        }
+
+        var right = this.right.evaluate(scope);
+
+        switch (this.operation) {
+            case '==': return left == right;
+            case '===': return left === right;
+            case '!=': return left != right;
+            case '!==': return left !== right;
+        }
+
+        // Null check for the operations.
+        if (left === null || right === null) {
+            switch (this.operation) {
+                case '+':
+                    if (left != null) return left;
+                    if (right != null) return right;
+                    return 0;
+                case '-':
+                    if (left != null) return left;
+                    if (right != null) return 0 - right;
+                    return 0;
+            }
+
+            return null;
+        }
+
+        switch (this.operation) {
+            case '+': return autoConvertAdd(left, right);
+            case '-': return left - right;
+            case '*': return left * right;
+            case '/': return left / right;
+            case '%': return left % right;
+            case '<': return left < right;
+            case '>': return left > right;
+            case '<=': return left <= right;
+            case '>=': return left >= right;
+            case '^': return left ^ right;
+            case '&': return left & right;
+        }
+
+        throw new Error(`Internal error [${this.operation}] not handled`);
     }
 
-    // Null check for the operations.
-    if (left === null || right === null) {
-      switch (this.operation) {
-        case '+':
-          if (left != null) return left;
-          if (right != null) return right;
-          return 0;
-        case '-':
-          if (left != null) return left;
-          if (right != null) return 0 - right;
-          return 0;
-      }
-
-      return null;
+    accept(visitor: I__ExpressionVisitor): void {
+        visitor.visitBinary(this);
     }
 
-    switch (this.operation) {
-      case '+'  : return autoConvertAdd(left, right);
-      case '-'  : return left - right;
-      case '*'  : return left * right;
-      case '/'  : return left / right;
-      case '%'  : return left % right;
-      case '<'  : return left < right;
-      case '>'  : return left > right;
-      case '<=' : return left <= right;
-      case '>=' : return left >= right;
-      case '^'  : return left ^ right;
-      case '&'  : return left & right;
+    connect(binding: IBinding, scope: Object): IValueInfo {
+        var leftInfo = this.left.connect(binding, scope),
+            rightInfo = this.right.connect(binding, scope),
+            childObservers: IValueObserver[] = [],
+            observer: IValueObserver;
+
+        if (leftInfo.observer) {
+            childObservers.push(leftInfo.observer);
+        }
+
+        if (rightInfo.observer) {
+            childObservers.push(rightInfo.observer);
+        }
+
+        if (childObservers.length) {
+            observer = new CompositeObserver(childObservers, () => {
+                return this.evaluate(scope, binding.valueConverterLookupFunction);
+            });
+        }
+
+        return {
+            value: this.evaluate(scope, binding.valueConverterLookupFunction),
+            observer: observer
+        };
     }
-
-    throw new Error(`Internal error [${this.operation}] not handled`);
-  }
-
-  accept(visitor){
-    visitor.visitBinary(this);
-  }
-
-  connect(binding, scope){
-    var leftInfo = this.left.connect(binding, scope),
-        rightInfo = this.right.connect(binding, scope),
-        childObservers = [],
-        observer;
-
-    if(leftInfo.observer){
-      childObservers.push(leftInfo.observer);
-    }
-
-    if(rightInfo.observer){
-      childObservers.push(rightInfo.observer);
-    }
-
-    if(childObservers.length){
-      observer = new CompositeObserver(childObservers, () => {
-        return this.evaluate(scope, binding.valueConverterLookupFunction);
-      });
-    }
-
-    return {
-      value:this.evaluate(scope, binding.valueConverterLookupFunction),
-      observer:observer
-    };
-  }
 }
 
-export class PrefixNot extends Expression {
-  public operation;
-  public expression;
-  constructor(operation, expression){
-    super();
+export class PrefixNot extends Expression implements IBindableExpression, I__ExpressionTraversal {
+    public operation: string;
+    public expression: IBindableExpression;
+    constructor(operation: string, expression: IBindableExpression) {
+        super();
 
-    this.operation = operation;
-    this.expression = expression;
-  }
-
-  evaluate(scope?, valueConverters?){
-    return !this.expression.evaluate(scope);
-  }
-
-  accept(visitor){
-    visitor.visitPrefix(this);
-  }
-
-  connect(binding, scope){
-    var info = this.expression.connect(binding, scope),
-        observer;
-
-    if(info.observer){
-      observer = new CompositeObserver([info.observer], () => {
-        return this.evaluate(scope, binding.valueConverterLookupFunction);
-      });
+        this.operation = operation;
+        this.expression = expression;
     }
 
-    return {
-      value: !info.value,
-      observer: observer
-    };
-  }
+    evaluate(scope: Object, valueConverters?: IValueConvertersLookup): any {
+        return !this.expression.evaluate(scope);
+    }
+
+    accept(visitor: I__ExpressionVisitor): void {
+        visitor.visitPrefix(this);
+    }
+
+    connect(binding: IBinding, scope: Object): IValueInfo {
+        var info = this.expression.connect(binding, scope),
+            observer: IValueObserver;
+
+        if (info.observer) {
+            observer = new CompositeObserver([info.observer], () => {
+                return this.evaluate(scope, binding.valueConverterLookupFunction);
+            });
+        }
+
+        return {
+            value: !info.value,
+            observer: observer
+        };
+    }
 }
 
-export class LiteralPrimitive extends Expression {
-  public value;
-  constructor(value){
-    super();
+export class LiteralPrimitive extends Expression implements IBindableExpression, I__ExpressionTraversal {
+    public value: any;
+    constructor(value: any) {
+        super();
 
-    this.value = value;
-  }
+        this.value = value;
+    }
 
-  evaluate(scope?, valueConverters?){
-    return this.value;
-  }
+    evaluate(scope: Object, valueConverters?: IValueConvertersLookup): any {
+        return this.value;
+    }
 
-  accept(visitor){
-    visitor.visitLiteralPrimitive(this);
-  }
+    accept(visitor: I__ExpressionVisitor): void {
+        visitor.visitLiteralPrimitive(this);
+    }
 
-  connect(binding, scope){
-    return { value:this.value }
-  }
+    connect(binding: IBinding, scope: Object): IValueInfo {
+        return { value: this.value }
+    }
 }
 
-export class LiteralString extends Expression {
-  public value;
-  constructor(value){
-    super();
+export class LiteralString extends Expression implements IBindableExpression, I__ExpressionTraversal {
+    public value: string;
+    constructor(value: string) {
+        super();
 
-    this.value = value;
-  }
+        this.value = value;
+    }
 
-  evaluate(scope?, valueConverters?){
-    return this.value;
-  }
+    evaluate(scope: Object, valueConverters?: IValueConvertersLookup): any {
+        return this.value;
+    }
 
-  accept(visitor){
-    visitor.visitLiteralString(this);
-  }
+    accept(visitor: I__ExpressionVisitor): void {
+        visitor.visitLiteralString(this);
+    }
 
-  connect(binding, scope){
-    return { value:this.value }
-  }
+    connect(binding: IBinding, scope: Object): IValueInfo {
+        return { value: this.value }
+    }
 }
 
-export class LiteralArray extends Expression {
-  public elements;
-  constructor(elements){
-    super();
+export class LiteralArray extends Expression implements IBindableExpression, I__ExpressionTraversal {
+    public elements: IBindableExpression[];
+    constructor(elements: IBindableExpression[]) {
+        super();
 
-    this.elements = elements;
-  }
-
-  evaluate(scope?, valueConverters?){
-    var elements = this.elements,
-        length = elements.length,
-        result = [],
-        i;
-
-    for(i = 0; i < length; ++i){
-      result[i] = elements[i].evaluate(scope, valueConverters);
+        this.elements = elements;
     }
 
-    return result;
-  }
+    evaluate(scope: Object, valueConverters?: IValueConvertersLookup): any {
+        var elements = this.elements,
+            length = elements.length,
+            result: any[] = [],
+            i: number;
 
-  accept(visitor){
-    visitor.visitLiteralArray(this);
-  }
+        for (i = 0; i < length; ++i) {
+            result[i] = elements[i].evaluate(scope, valueConverters);
+        }
 
-  connect(binding, scope) {
-    var observer,
-        childObservers = [],
-        results = [],
-        i, ii, exp, expInfo;
-
-    for(i = 0, ii = this.elements.length; i<ii; ++i){
-      exp = this.elements[i];
-      expInfo = exp.connect(binding, scope);
-
-      if(expInfo.observer){
-        childObservers.push(expInfo.observer);
-      }
-
-      results[i] = expInfo.value;
+        return result;
     }
 
-    if(childObservers.length){
-      observer = new CompositeObserver(childObservers, () => {
-        return this.evaluate(scope, binding.valueConverterLookupFunction);
-      });
+    accept(visitor: I__ExpressionVisitor): void {
+        visitor.visitLiteralArray(this);
     }
 
-    return {
-      value:results,
-      observer:observer
-    };
-  }
+    connect(binding: IBinding, scope: Object): IValueInfo {
+        var observer: IValueObserver,
+            childObservers: IValueObserver[] = [],
+            results: any[] = [],
+            i: number, ii: number, exp: IBindableExpression, expInfo: IValueInfo;
+
+        for (i = 0, ii = this.elements.length; i < ii; ++i) {
+            exp = this.elements[i];
+            expInfo = exp.connect(binding, scope);
+
+            if (expInfo.observer) {
+                childObservers.push(expInfo.observer);
+            }
+
+            results[i] = expInfo.value;
+        }
+
+        if (childObservers.length) {
+            observer = new CompositeObserver(childObservers, () => {
+                return this.evaluate(scope, binding.valueConverterLookupFunction);
+            });
+        }
+
+        return {
+            value: results,
+            observer: observer
+        };
+    }
 }
 
-export class LiteralObject extends Expression {
-  public keys;
-  public values;
-  constructor(keys, values){
-    super();
+export class LiteralObject extends Expression implements IBindableExpression, I__ExpressionTraversal {
+    public keys: any[];
+    public values: IBindableExpression[];
+    constructor(keys: any[], values: IBindableExpression[]) {
+        super();
 
-    this.keys = keys;
-    this.values = values;
-  }
-
-  evaluate(scope?, valueConverters?){
-    var instance = {},
-        keys = this.keys,
-        values = this.values,
-        length = keys.length,
-        i;
-
-    for(i = 0; i < length; ++i){
-      instance[keys[i]] = values[i].evaluate(scope, valueConverters);
+        this.keys = keys;
+        this.values = values;
     }
 
-    return instance;
-  }
+    evaluate(scope: Object, valueConverters?: IValueConvertersLookup): any {
+        var instance = {},
+            keys = this.keys,
+            values = this.values,
+            length = keys.length,
+            i: number;
 
-  accept(visitor){
-    visitor.visitLiteralObject(this);
-  }
+        for (i = 0; i < length; ++i) {
+            instance[keys[i]] = values[i].evaluate(scope, valueConverters);
+        }
 
-  connect(binding, scope){
-    var observer,
-        childObservers = [],
-        instance = {},
-        keys = this.keys,
-        values = this.values,
-        length = keys.length,
-        i, valueInfo;
-
-    for(i = 0; i < length; ++i){
-      valueInfo = values[i].connect(binding, scope);
-
-      if(valueInfo.observer){
-        childObservers.push(valueInfo.observer);
-      }
-
-      instance[keys[i]] = valueInfo.value;
+        return instance;
     }
 
-    if(childObservers.length){
-      observer = new CompositeObserver(childObservers, () => {
-        return this.evaluate(scope, binding.valueConverterLookupFunction);
-      });
+    accept(visitor: I__ExpressionVisitor): void {
+        visitor.visitLiteralObject(this);
     }
 
-    return {
-      value:instance,
-      observer:observer
-    };
-  }
+    connect(binding: IBinding, scope: Object): IValueInfo {
+        var observer: IValueObserver,
+            childObservers: IValueObserver[] = [],
+            instance: Object = {},
+            keys = this.keys,
+            values = this.values,
+            length = keys.length,
+            i: number, valueInfo: IValueInfo;
+
+        for (i = 0; i < length; ++i) {
+            valueInfo = values[i].connect(binding, scope);
+
+            if (valueInfo.observer) {
+                childObservers.push(valueInfo.observer);
+            }
+
+            instance[keys[i]] = valueInfo.value;
+        }
+
+        if (childObservers.length) {
+            observer = new CompositeObserver(childObservers, () => {
+                return this.evaluate(scope, binding.valueConverterLookupFunction);
+            });
+        }
+
+        return {
+            value: instance,
+            observer: observer
+        };
+    }
 }
 
-export class Unparser {
-  public buffer;
-  constructor(buffer) {
-    this.buffer = buffer;
-  }
-
-  static unparse(expression) {
-    var buffer = [],
-        visitor = new Unparser(buffer);
-
-    expression.accept(visitor);
-
-    return buffer.join('');
-  }
-
-  write(text){
-    this.buffer.push(text);
-  }
-
-  writeArgs(args) {
-    var i, length;
-
-    this.write('(');
-
-    for (i = 0, length = args.length; i < length; ++i) {
-      if (i !== 0) {
-        this.write(',');
-      }
-
-      args[i].accept(this);
+export class Unparser implements I__ExpressionVisitor {
+    public buffer: string[];
+    constructor(buffer: string[]) {
+        this.buffer = buffer;
     }
 
-    this.write(')');
-  }
+    static unparse(expression: I__ExpressionTraversal): string {
+        var buffer: string[] = [],
+            visitor: I__ExpressionVisitor = new Unparser(buffer);
 
-  visitChain(chain) {
-    var expressions = chain.expressions,
-        length = expressions.length,
-        i;
+        expression.accept(visitor);
 
-    for (i = 0; i < length; ++i) {
-      if (i !== 0) {
-        this.write(';');
-      }
-
-      expressions[i].accept(this);
-    }
-  }
-
-  visitValueConverter(converter) {
-    var args = converter.args,
-        length = args.length,
-        i;
-
-    this.write('(');
-    converter.expression.accept(this);
-    this.write(`|${converter.name}`);
-
-    for (i = 0; i < length; ++i) {
-      this.write(' :');
-      args[i].accept(this);
+        return buffer.join('');
     }
 
-    this.write(')');
-  }
-
-  visitAssign(assign) {
-    assign.target.accept(this);
-    this.write('=');
-    assign.value.accept(this);
-  }
-
-  visitConditional(conditional) {
-    conditional.condition.accept(this);
-    this.write('?');
-    conditional.yes.accept(this);
-    this.write(':');
-    conditional.no.accept(this);
-  }
-
-  visitAccessScope(access) {
-    this.write(access.name);
-  }
-
-  visitAccessMember(access) {
-    access.object.accept(this);
-    this.write(`.${access.name}`);
-  }
-
-  visitAccessKeyed(access) {
-    access.object.accept(this);
-    this.write('[');
-    access.key.accept(this);
-    this.write(']');
-  }
-
-  visitCallScope(call) {
-    this.write(call.name);
-    this.writeArgs(call.args);
-  }
-
-  visitCallFunction(call) {
-    call.func.accept(this);
-    this.writeArgs(call.args);
-  }
-
-  visitCallMember(call) {
-    call.object.accept(this);
-    this.write(`.${call.name}`);
-    this.writeArgs(call.args);
-  }
-
-  visitPrefix(prefix) {
-    this.write(`(${prefix.operation}`);
-    prefix.expression.accept(this);
-    this.write(')');
-  }
-
-  visitBinary(binary) {
-    this.write('(');
-    binary.left.accept(this);
-    this.write(binary.operation);
-    binary.right.accept(this);
-    this.write(')');
-  }
-
-  visitLiteralPrimitive(literal) {
-    this.write(`${literal.value}`);
-  }
-
-  visitLiteralArray(literal) {
-    var elements = literal.elements,
-        length = elements.length,
-        i;
-
-    this.write('[');
-
-    for (i = 0; i < length; ++i) {
-      if (i !== 0) {
-        this.write(',');
-      }
-
-      elements[i].accept(this);
+    write(text: string): void {
+        this.buffer.push(text);
     }
 
-    this.write(']');
-  }
+    writeArgs(args: I__ExpressionTraversal[]): void {
+        var i, length;
 
-  visitLiteralObject(literal) {
-    var keys = literal.keys,
-        values = literal.values,
-        length = keys.length,
-        i;
+        this.write('(');
 
-    this.write('{');
+        for (i = 0, length = args.length; i < length; ++i) {
+            if (i !== 0) {
+                this.write(',');
+            }
 
-    for (i = 0; i < length; ++i) {
-      if (i !== 0){
-        this.write(',');
-      }
+            args[i].accept(this);
+        }
 
-      this.write(`'${keys[i]}':`);
-      values[i].accept(this);
+        this.write(')');
     }
 
-    this.write('}');
-  }
+    visitChain(chain: Chain): void {
+        var expressions = chain.expressions,
+            length = expressions.length,
+            i: number;
 
-  visitLiteralString(literal) {
-    var escaped = literal.value.replace(/'/g, "\'");
-    this.write(`'${escaped}'`);
-  }
+        for (i = 0; i < length; ++i) {
+            if (i !== 0) {
+                this.write(';');
+            }
+
+            (<I__ExpressionTraversal>expressions[i]).accept(this);
+        }
+    }
+
+    visitValueConverter(converter: ValueConverter): void {
+        var args = converter.args,
+            length = args.length,
+            i: number;
+
+        this.write('(');
+        (<I__ExpressionTraversal>converter.expression).accept(this);
+        this.write(`|${converter.name}`);
+
+        for (i = 0; i < length; ++i) {
+            this.write(' :');
+            (<I__ExpressionTraversal><IExpression>args[i]).accept(this);
+        }
+
+        this.write(')');
+    }
+
+    visitAssign(assign: Assign): void {
+        (<I__ExpressionTraversal><IExpression>assign.target).accept(this);
+        this.write('=');
+        assign.value.accept(this);
+    }
+
+    visitConditional(conditional: Conditional): void {
+        (<I__ExpressionTraversal><IExpression>conditional.condition).accept(this);
+        this.write('?');
+        (<I__ExpressionTraversal><IExpression>conditional.yes).accept(this);
+        this.write(':');
+        (<I__ExpressionTraversal><IExpression>conditional.no).accept(this);
+    }
+
+    visitAccessScope(access: AccessScope): void {
+        this.write(access.name);
+    }
+
+    visitAccessMember(access: AccessMember): void {
+        (<I__ExpressionTraversal><IExpression>access.object).accept(this);
+        this.write(`.${access.name}`);
+    }
+
+    visitAccessKeyed(access: AccessKeyed): void {
+        (<I__ExpressionTraversal><IExpression>access.object).accept(this);
+        this.write('[');
+        (<I__ExpressionTraversal><IExpression>access.key).accept(this);
+        this.write(']');
+    }
+
+    visitCallScope(call: CallScope): void {
+        this.write(call.name);
+        this.writeArgs(<I__ExpressionTraversal[]><IExpression[]>call.args);
+    }
+
+    visitCallFunction(call: CallFunction): void {
+        (<I__ExpressionTraversal><IExpression>call.func).accept(this);
+        this.writeArgs(<I__ExpressionTraversal[]><IExpression[]>call.args);
+    }
+
+    visitCallMember(call: CallMember): void {
+        (<I__ExpressionTraversal><IExpression>call.object).accept(this);
+        this.write(`.${call.name}`);
+        this.writeArgs(<I__ExpressionTraversal[]><IExpression[]>call.args);
+    }
+
+    visitPrefix(prefix: PrefixNot): void {
+        this.write(`(${prefix.operation}`);
+        (<I__ExpressionTraversal><IExpression>prefix.expression).accept(this);
+        this.write(')');
+    }
+
+    visitBinary(binary: Binary): void {
+        this.write('(');
+        (<I__ExpressionTraversal><IExpression>binary.left).accept(this);
+        this.write(binary.operation);
+        (<I__ExpressionTraversal><IExpression>binary.right).accept(this);
+        this.write(')');
+    }
+
+    visitLiteralPrimitive(literal: LiteralPrimitive): void {
+        this.write(`${literal.value}`);
+    }
+
+    visitLiteralArray(literal: LiteralArray): void {
+        var elements = literal.elements,
+            length = elements.length,
+            i: number;
+
+        this.write('[');
+
+        for (i = 0; i < length; ++i) {
+            if (i !== 0) {
+                this.write(',');
+            }
+
+            (<I__ExpressionTraversal><IExpression>elements[i]).accept(this);
+        }
+
+        this.write(']');
+    }
+
+    visitLiteralObject(literal: LiteralObject): void {
+        var keys = literal.keys,
+            values = literal.values,
+            length = keys.length,
+            i: number;
+
+        this.write('{');
+
+        for (i = 0; i < length; ++i) {
+            if (i !== 0) {
+                this.write(',');
+            }
+
+            this.write(`'${keys[i]}':`);
+            (<I__ExpressionTraversal><IExpression>values[i]).accept(this);
+        }
+
+        this.write('}');
+    }
+
+    visitLiteralString(literal: LiteralString): void {
+        var escaped = literal.value.replace(/'/g, "\'");
+        this.write(`'${escaped}'`);
+    }
 }
 
-var evalListCache = [[],[0],[0,0],[0,0,0],[0,0,0,0],[0,0,0,0,0]];
+var evalListCache = [[], [0], [0, 0], [0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0, 0]];
 
 /// Evaluate the [list] in context of the [scope].
-function evalList(scope, list, valueConverters) {
-  var length = list.length,
-      cacheLength, i;
+function evalList(scope: Object, list: IExpression[], valueConverters?: IValueConvertersLookup): any[] {
+    var length = list.length,
+        cacheLength: number, i: number;
 
-  for (cacheLength = evalListCache.length; cacheLength <= length; ++cacheLength) {
-    evalListCache.push([]);
-  }
+    for (cacheLength = evalListCache.length; cacheLength <= length; ++cacheLength) {
+        evalListCache.push([]);
+    }
 
-  var result = evalListCache[length];
+    var result = evalListCache[length];
 
-  for (i = 0; i < length; ++i) {
-    result[i] = list[i].evaluate(scope, valueConverters);
-  }
+    for (i = 0; i < length; ++i) {
+        result[i] = list[i].evaluate(scope, valueConverters);
+    }
 
-  return result;
+    return result;
 }
 
 /// Add the two arguments with automatic type conversion.
-function autoConvertAdd(a, b) {
-  if (a != null && b != null) {
-    // TODO(deboer): Support others.
-    if (typeof a == 'string' && typeof b != 'string') {
-      return a + b.toString();
+function autoConvertAdd(a: any, b: any): any {
+    if (a != null && b != null) {
+        // TODO(deboer): Support others.
+        if (typeof a == 'string' && typeof b != 'string') {
+            return a + b.toString();
+        }
+
+        if (typeof a != 'string' && typeof b == 'string') {
+            return a.toString() + b;
+        }
+
+        return a + b;
     }
 
-    if (typeof a != 'string' && typeof b == 'string') {
-      return a.toString() + b;
+    if (a != null) {
+        return a;
     }
 
-    return a + b;
-  }
-
-  if (a != null) {
-    return a;
-  }
-
-  if (b != null) {
-    return b;
-  }
-
-  return 0;
-}
-
-function ensureFunctionFromMap(obj, name){
-  var func = obj[name];
-
-  if (typeof func === 'function') {
-    return func;
-  }
-
-  if (func === null) {
-    throw new Error(`Undefined function ${name}`);
-  } else {
-    throw new Error(`${name} is not a function`);
-  }
-}
-
-function getKeyed(obj, key) {
-  if (Array.isArray(obj)) {
-    return obj[parseInt(key)];
-  } else if (obj) {
-    return obj[key];
-  } else if (obj === null) {
-    throw new Error('Accessing null object');
-  } else {
-    return obj[key];
-  }
-}
-
-function setKeyed(obj, key, value) {
-  if (Array.isArray(obj)) {
-    var index = parseInt(key);
-
-    if (obj.length <= index) {
-      obj.length = index + 1;
+    if (b != null) {
+        return b;
     }
 
-    obj[index] = value;
-  } else {
-    obj[key] = value;
-  }
+    return 0;
+}
 
-  return value;
+function ensureFunctionFromMap(obj: Object, name: string): Function {
+    var func = obj[name];
+
+    if (typeof func === 'function') {
+        return func;
+    }
+
+    if (func === null) {
+        throw new Error(`Undefined function ${name}`);
+    } else {
+        throw new Error(`${name} is not a function`);
+    }
+}
+
+function getKeyed(obj: Object, key: any): any {
+    if (Array.isArray(obj)) {
+        return obj[parseInt(key)];
+    } else if (obj) {
+        return obj[key];
+    } else if (obj === null) {
+        throw new Error('Accessing null object');
+    } else {
+        return obj[key];
+    }
+}
+
+function setKeyed(obj: Object, key: any, value: any): any {
+    if (Array.isArray(obj)) {
+        var index = parseInt(key);
+
+        if ((<any[]>obj).length <= index) {
+            (<any[]>obj).length = index + 1;
+        }
+
+        obj[index] = value;
+    } else {
+        obj[key] = value;
+    }
+
+    return value;
 }

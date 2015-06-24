@@ -1,4 +1,4 @@
-﻿declare module 'aurelia-tsutil' {
+﻿declare module 'tsutil' {
     export interface Dictionary<T> {
         [key: string]: T;
     }

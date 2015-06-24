@@ -1,4 +1,4 @@
-import {Dictionary} from 'aurelia-tsutil';
+import {Dictionary} from 'tsutil';
 import {IHeaders, IXHRequest} from './interfaces';
 
 export class Headers implements IHeaders {

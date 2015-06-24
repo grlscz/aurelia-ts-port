@@ -1,5 +1,5 @@
 declare module 'aurelia-route-recognizer/interfaces' {
-	import { Dictionary } from 'aurelia-tsutil';
+	import { Dictionary } from 'tsutil';
 	export interface ISegment {
 	    name?: string;
 	    eachChar(callback: (charSpec: ICharacterSpecification) => void): void;
@@ -40,9 +40,9 @@ declare module 'aurelia-route-recognizer/interfaces' {
 	    path: string;
 	    handler: IHandler;
 	}
-	export interface IRoutesArray extends Array<RoutesCollection> {
+	export interface IRoutesArray extends Array<TRoutesCollection> {
 	}
-	export type RoutesCollection = IRoure | IRoutesArray;
+	export type TRoutesCollection = IRoure | IRoutesArray;
 	export interface IRoureMatch {
 	    handler: IHandler;
 	    params: Dictionary<string>;
@@ -69,7 +69,7 @@ declare module 'aurelia-route-recognizer/state' {
 
 }
 declare module 'aurelia-route-recognizer/segments' {
-	import { Dictionary } from 'aurelia-tsutil';
+	import { Dictionary } from 'tsutil';
 	import { ISegment, ICharacterSpecification } from 'aurelia-route-recognizer/interfaces';
 	export class StaticSegment implements ISegment {
 	    string: string;
@@ -100,8 +100,8 @@ declare module 'aurelia-route-recognizer/segments' {
 
 }
 declare module 'aurelia-route-recognizer/index' {
-	import { Dictionary } from 'aurelia-tsutil';
-	import { IAcceptingState, IHandlerWithParameterNames, RoutesCollection, IRoureMatch, IQueryParams, ISegment } from 'aurelia-route-recognizer/interfaces';
+	import { Dictionary } from 'tsutil';
+	import { IAcceptingState, IHandlerWithParameterNames, TRoutesCollection, IRoureMatch, IQueryParams, ISegment } from 'aurelia-route-recognizer/interfaces';
 	/**
 	 * Class that parses route patterns and matches path strings.
 	 *
@@ -121,7 +121,7 @@ declare module 'aurelia-route-recognizer/index' {
 	     * @method add
 	     * @param {Object} route The route to add.
 	     */
-	    add(route: RoutesCollection): IAcceptingState;
+	    add(route: TRoutesCollection): IAcceptingState;
 	    /**
 	     * Retrieve the handlers registered for the named route.
 	     *

@@ -1,117 +1,120 @@
+import {IPropertyObserver, IAssignableExpression, IValueConverter, IValueConvertersLookup, IValueInfo, IUnsubscribe, BindingMode, IBindablePropertyObserver, IBinding} from './interfaces';
+import {ObserverLocator} from './observer-locator';
+
 import {bindingMode} from './binding-modes';
 
 export class BindingExpression {
-  public observerLocator;
-  public targetProperty;
-  public sourceExpression;
-  public mode;
-  public valueConverterLookupFunction;
-  public attribute;
-  public discrete;
-  constructor(observerLocator, targetProperty, sourceExpression,
-    mode, valueConverterLookupFunction, attribute?){
-    this.observerLocator = observerLocator;
-    this.targetProperty = targetProperty;
-    this.sourceExpression = sourceExpression;
-    this.mode = mode;
-    this.valueConverterLookupFunction = valueConverterLookupFunction;
-    this.attribute = attribute;
-    this.discrete = false;
-  }
+    public observerLocator: ObserverLocator;
+    public targetProperty: string;
+    public sourceExpression: IAssignableExpression;
+    public mode: BindingMode;
+    public valueConverterLookupFunction: IValueConvertersLookup;
+    public attribute: string;
+    public discrete: boolean;
+    constructor(observerLocator: ObserverLocator, targetProperty: string, sourceExpression: IAssignableExpression,
+        mode: BindingMode, valueConverterLookupFunction: IValueConvertersLookup, attribute?: string) {
+        this.observerLocator = observerLocator;
+        this.targetProperty = targetProperty;
+        this.sourceExpression = sourceExpression;
+        this.mode = mode;
+        this.valueConverterLookupFunction = valueConverterLookupFunction;
+        this.attribute = attribute;
+        this.discrete = false;
+    }
 
-  createBinding(target):any{
-    return new Binding(
-      this.observerLocator,
-      this.sourceExpression,
-      target,
-      this.targetProperty,
-      this.mode,
-      this.valueConverterLookupFunction
-      );
-  }
+    createBinding(target: Object): any {
+        return new Binding(
+            this.observerLocator,
+            this.sourceExpression,
+            target,
+            this.targetProperty,
+            this.mode,
+            this.valueConverterLookupFunction
+            );
+    }
 }
 
-class Binding {
-  public observerLocator;
-  public sourceExpression;
-  public targetProperty;
-  public mode;
-  public valueConverterLookupFunction;
-  public source;
-  private _disposeObserver;
-  private _disposeListener;
-  constructor(observerLocator, sourceExpression, target, targetProperty, mode, valueConverterLookupFunction){
-    this.observerLocator = observerLocator;
-    this.sourceExpression = sourceExpression;
-    this.targetProperty = observerLocator.getObserver(target, targetProperty);
-    this.mode = mode;
-    this.valueConverterLookupFunction = valueConverterLookupFunction;
-  }
-
-  getObserver(obj, propertyName){
-    return this.observerLocator.getObserver(obj, propertyName);
-  }
-
-  bind(source){
-    var targetProperty = this.targetProperty,
-        info;
-
-    if ('bind' in targetProperty){
-      targetProperty.bind();
+class Binding implements IBinding {
+    public observerLocator: ObserverLocator;
+    public sourceExpression: IAssignableExpression;
+    public targetProperty: IPropertyObserver;
+    public mode: BindingMode;
+    public valueConverterLookupFunction: IValueConvertersLookup;
+    public source: Object;
+    private _disposeObserver: IUnsubscribe;
+    private _disposeListener: IUnsubscribe;
+    constructor(observerLocator: ObserverLocator, sourceExpression: IAssignableExpression, target: Object, targetProperty: string, mode: BindingMode, valueConverterLookupFunction: IValueConvertersLookup) {
+        this.observerLocator = observerLocator;
+        this.sourceExpression = sourceExpression;
+        this.targetProperty = observerLocator.getObserver(target, targetProperty);
+        this.mode = mode;
+        this.valueConverterLookupFunction = valueConverterLookupFunction;
     }
 
-    if(this.mode == bindingMode.oneWay || this.mode == bindingMode.twoWay){
-      if(this._disposeObserver){
-        if(this.source === source){
-          return;
+    getObserver(obj: Object, propertyName: string): IPropertyObserver {
+        return this.observerLocator.getObserver(obj, propertyName);
+    }
+
+    bind(source: Object): void {
+        var targetProperty = this.targetProperty,
+            info: IValueInfo;
+
+        if ('bind' in targetProperty) {
+            (<IBindablePropertyObserver>targetProperty).bind();
         }
 
-        this.unbind();
-      }
+        if (this.mode == bindingMode.oneWay || this.mode == bindingMode.twoWay) {
+            if (this._disposeObserver) {
+                if (this.source === source) {
+                    return;
+                }
 
-      info = this.sourceExpression.connect(this, source);
+                this.unbind();
+            }
 
-      if(info.observer){
-        this._disposeObserver = info.observer.subscribe(newValue =>{
-          var existing = targetProperty.getValue();
-          if(newValue !== existing){
-            targetProperty.setValue(newValue);
-          }
-        });
-      }
+            info = this.sourceExpression.connect(this, source);
 
-      if(info.value !== undefined){
-        targetProperty.setValue(info.value);
-      }
+            if (info.observer) {
+                this._disposeObserver = info.observer.subscribe(newValue => {
+                    var existing = targetProperty.getValue();
+                    if (newValue !== existing) {
+                        targetProperty.setValue(newValue);
+                    }
+                });
+            }
 
-      if(this.mode == bindingMode.twoWay){
-        this._disposeListener = targetProperty.subscribe(newValue => {
-          this.sourceExpression.assign(source, newValue, this.valueConverterLookupFunction);
-        });
-      }
+            if (info.value !== undefined) {
+                targetProperty.setValue(info.value);
+            }
 
-      this.source = source;
-    }else{
-      var value = this.sourceExpression.evaluate(source, this.valueConverterLookupFunction);
+            if (this.mode == bindingMode.twoWay) {
+                this._disposeListener = targetProperty.subscribe(newValue => {
+                    this.sourceExpression.assign(source, newValue, this.valueConverterLookupFunction);
+                });
+            }
 
-      if(value !== undefined){
-        targetProperty.setValue(value);
-      }
-    }
-  }
+            this.source = source;
+        } else {
+            var value = this.sourceExpression.evaluate(source, this.valueConverterLookupFunction);
 
-  unbind(){
-    if ('unbind' in this.targetProperty){
-      this.targetProperty.unbind();
-    }
-    if(this._disposeObserver){
-      this._disposeObserver();
-      this._disposeObserver = null;
+            if (value !== undefined) {
+                targetProperty.setValue(value);
+            }
+        }
     }
 
-    if(this._disposeListener){
-      this._disposeListener();
-      this._disposeListener = null;
+    unbind(): void {
+        if ('unbind' in this.targetProperty) {
+            (<IBindablePropertyObserver>this.targetProperty).unbind();
+        }
+        if (this._disposeObserver) {
+            this._disposeObserver();
+            this._disposeObserver = null;
+        }
+
+        if (this._disposeListener) {
+            this._disposeListener();
+            this._disposeListener = null;
+        }
     }
-  }
 }

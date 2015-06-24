@@ -1,9 +1,9 @@
-import {IRequestMessageTransformer, ResponseReviver, JSONContentReplacer, ICancellablePromise} from './interfaces';
+import {IRequestMessageTransformer, TResponseReviver, IJSONContentReplacer, ICancellablePromise} from './interfaces';
 import {HttpClient} from './http-client';
-import {Dictionary} from 'aurelia-tsutil';
+import {Dictionary} from 'tsutil';
 import {HttpResponseMessage} from './http-response-message';
 
-import {join, QueryStringSource} from 'aurelia-path'
+import {join, TQueryStringSource} from 'aurelia-path'
 import {HttpRequestMessage} from './http-request-message';
 import {JSONPRequestMessage} from './jsonp-request-message';
 
@@ -60,13 +60,13 @@ export class RequestBuilder {
     withUri: (uri: string) => RequestBuilder;
     withContent: (content: any) => RequestBuilder;
     withBaseUrl: (baseUrl: string) => RequestBuilder;
-    withParams: (params: Dictionary<QueryStringSource>) => RequestBuilder;
+    withParams: (params: Dictionary<TQueryStringSource>) => RequestBuilder;
     withResponseType: (responseType: string) => RequestBuilder;
     withTimeout: (timeout: number) => RequestBuilder;
     withHeader: (key: string, value: string) => RequestBuilder;
     withCredentials: (value: boolean) => RequestBuilder;
-    withReviver: (reviver: ResponseReviver) => RequestBuilder;
-    withReplacer: (replacer: JSONContentReplacer) => RequestBuilder;
+    withReviver: (reviver: TResponseReviver) => RequestBuilder;
+    withReplacer: (replacer: IJSONContentReplacer) => RequestBuilder;
     withProgressCallback: (progressCallback: (ev: ProgressEvent) => any) => RequestBuilder;
     withCallbackParameterName: (callbackParameterName: string) => RequestBuilder;
 }
@@ -138,7 +138,7 @@ RequestBuilder.addHelper('withBaseUri', function (baseUri: string) {
     }
 });
 
-RequestBuilder.addHelper('withParams', function (params: Dictionary<QueryStringSource>) {
+RequestBuilder.addHelper('withParams', function (params: Dictionary<TQueryStringSource>) {
     return function (client, processor, message) {
         message.params = params;
     }
@@ -168,13 +168,13 @@ RequestBuilder.addHelper('withCredentials', function (value: boolean) {
     }
 });
 
-RequestBuilder.addHelper('withReviver', function (reviver: ResponseReviver) {
+RequestBuilder.addHelper('withReviver', function (reviver: TResponseReviver) {
     return function (client, processor, message) {
         message.reviver = reviver;
     }
 });
 
-RequestBuilder.addHelper('withReplacer', function (replacer: JSONContentReplacer) {
+RequestBuilder.addHelper('withReplacer', function (replacer: IJSONContentReplacer) {
     return function (client, processor, message) {
         message.replacer = replacer;
     }

@@ -1,4 +1,4 @@
-import {IXHResponse, IRequestMessage, ResponseReviver, JSONResponseReviver, NonJSONResponseReviver, IHeaders} from './interfaces';
+import {IXHResponse, IRequestMessage, TResponseReviver, IJSONResponseReviver, INonJSONResponseReviver, IHeaders} from './interfaces';
 
 /* jshint -W093 */
 import {Headers} from './headers';
@@ -9,13 +9,13 @@ export class HttpResponseMessage {
     public response: any;
     public isSuccess: boolean;
     public statusText: string;
-    public reviver: ResponseReviver;
+    public reviver: TResponseReviver;
     public mimeType: string;
     public responseType: string;
     public headers: IHeaders;
     private _content: any;
 
-    constructor(requestMessage: IRequestMessage, xhr: IXHResponse, responseType: string, reviver?: ResponseReviver) {
+    constructor(requestMessage: IRequestMessage, xhr: IXHResponse, responseType: string, reviver?: TResponseReviver) {
         this.requestMessage = requestMessage;
         this.statusCode = xhr.status;
         this.response = xhr.response || xhr.responseText;
@@ -55,11 +55,11 @@ export class HttpResponseMessage {
             }
 
             if (this.responseType === 'json') {
-                return this._content = JSON.parse(this.response, <JSONResponseReviver>this.reviver);
+                return this._content = JSON.parse(this.response, <IJSONResponseReviver>this.reviver);
             }
 
             if (this.reviver) {
-                return this._content = (<NonJSONResponseReviver>this.reviver)(this.response);
+                return this._content = (<INonJSONResponseReviver>this.reviver)(this.response);
             }
 
             return this._content = this.response;

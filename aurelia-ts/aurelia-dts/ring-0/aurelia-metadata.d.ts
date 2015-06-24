@@ -1,3 +1,64 @@
+declare module 'aurelia-metadata/interfaces' {
+	import { DecoratorApplicator } from 'aurelia-metadata/decorator-applicator';
+	export interface IHasDecoratorsApplicator extends Function {
+	    decorators: DecoratorApplicator | (() => DecoratorApplicator);
+	}
+	export interface IOrigin {
+	    moduleId: string;
+	    moduleMember: string;
+	}
+	export type TOriginSource = string | IOrigin;
+	export interface IHasOriginSource {
+	    origin: TOriginSource | (() => TOriginSource);
+	}
+	export interface IAddDecorator {
+	    (...args: any[]): DecoratorApplicator;
+	}
+	export interface IMetadata {
+	    resource: string;
+	    paramTypes: string;
+	    properties: string;
+	    get<T>(metadataKey: any, target: Object): T;
+	    getOwn<T>(metadataKey: any, target: Object): T;
+	    getOrCreateOwn<T>(metadataKey: any, Type: new () => T, target: Object): T;
+	    get<T>(metadataKey: any, target: Object, propertyKey: string | symbol): T;
+	    getOwn<T>(metadataKey: any, target: Object, propertyKey: string | symbol): T;
+	    getOrCreateOwn<T>(metadataKey: any, Type: new () => T, target: Object, propertyKey: string | symbol): T;
+	}
+
+}
+declare module 'aurelia-metadata/metadata' {
+	import { IMetadata } from 'aurelia-metadata/interfaces';
+	/**
+	* Provides helpers for working with metadata.
+	*
+	* @class Metadata
+	* @static
+	*/
+	export var Metadata: IMetadata;
+
+}
+declare module 'aurelia-metadata/decorator-applicator' {
+	export class DecoratorApplicator {
+	    private _first;
+	    private _second;
+	    private _third;
+	    private _rest;
+	    constructor();
+	    decorator(decorator: ClassDecorator): DecoratorApplicator;
+	    _decorate(target: Function): void;
+	}
+
+}
+declare module 'aurelia-metadata/decorators' {
+	export var Decorators: {
+	    configure: {
+	        parameterizedDecorator(name: string, decorator: (...args: any[]) => <TFunction extends Function>(target: TFunction) => void | TFunction): void;
+	        simpleDecorator(name: any, decorator: <TFunction extends Function>(target: TFunction) => void | TFunction): void;
+	    };
+	};
+
+}
 declare module 'aurelia-metadata/origin' {
 	import { IOrigin, IHasOriginSource } from 'aurelia-metadata/interfaces';
 	/**
@@ -20,7 +81,7 @@ declare module 'aurelia-metadata/origin' {
 	    * @param {Function} fn The function to inspect for Origin metadata.
 	    * @return {Origin} Returns the Origin metadata.
 	    */
-	    static get(fn: IHasOriginSource): IOrigin;
+	    static get(fn: Object | IHasOriginSource): IOrigin;
 	    /**
 	    * Set the Origin annotation for the specified function.
 	    *
@@ -30,77 +91,8 @@ declare module 'aurelia-metadata/origin' {
 	    * @param {origin} fn The Origin metadata to store on the function.
 	    * @return {Origin} Returns the Origin metadata.
 	    */
-	    static set(fn: IHasOriginSource, origin: Origin): void;
+	    static set(fn: Object, origin: IOrigin): void;
 	}
-
-}
-declare module 'aurelia-metadata/interfaces' {
-	import { Dictionary } from 'aurelia-tsutil';
-	import { Origin } from 'aurelia-metadata/origin';
-	export interface IHasDecoratorsApplicator {
-	    decorators: IDecoratorsApplicator | (() => IDecoratorsApplicator);
-	}
-	export interface IDecoratorsApplicator {
-	    _decorate(any: any): void;
-	}
-	export interface IOrigin {
-	    moduleId: string;
-	    moduleMember: string;
-	}
-	export type OriginSource = string | Origin;
-	export interface IHasOriginSource {
-	    origin: OriginSource | (() => OriginSource);
-	}
-	export interface ITypedDecorator<T> {
-	    (traget: T): void;
-	}
-	export interface IDecorator extends ITypedDecorator<Object> {
-	}
-	export interface IAddDecorator {
-	    (...args: any[]): IDecoratorsApplicator;
-	}
-	export interface IDecorators extends Dictionary<IAddDecorator> {
-	}
-
-}
-declare module 'aurelia-metadata/metadata' {
-	/**
-	* Provides helpers for working with metadata.
-	*
-	* @class Metadata
-	* @static
-	*/
-	export var Metadata: {
-	    resource: string;
-	    paramTypes: string;
-	    properties: string;
-	    get(metadataKey: any, target: Object, propertyKey?: string | symbol): any;
-	    getOwn(metadataKey: any, target: Object, propertyKey?: string | symbol): any;
-	    getOrCreateOwn(metadataKey: any, Type: new () => any, target: Object, propertyKey?: string | symbol): any;
-	};
-
-}
-declare module 'aurelia-metadata/decorator-applicator' {
-	import { IDecoratorsApplicator, IDecorator } from 'aurelia-metadata/interfaces';
-	export class DecoratorApplicator implements IDecoratorsApplicator {
-	    private _first;
-	    private _second;
-	    private _third;
-	    private _rest;
-	    constructor();
-	    decorator(decorator: IDecorator): DecoratorApplicator;
-	    _decorate(target: any): void;
-	}
-
-}
-declare module 'aurelia-metadata/decorators' {
-	import { IDecorator } from 'aurelia-metadata/interfaces';
-	export var Decorators: {
-	    configure: {
-	        parameterizedDecorator(name: string, decorator: (...args: any[]) => IDecorator): void;
-	        simpleDecorator(name: any, decorator: IDecorator): void;
-	    };
-	};
 
 }
 declare module 'aurelia-metadata/index' {
@@ -112,7 +104,6 @@ declare module 'aurelia-metadata/index' {
 	export { Origin } from 'aurelia-metadata/origin';
 	export { Metadata } from 'aurelia-metadata/metadata';
 	export { Decorators } from 'aurelia-metadata/decorators';
-	export { IDecorator, ITypedDecorator } from 'aurelia-metadata/interfaces';
 
 }
 declare module 'aurelia-metadata' {

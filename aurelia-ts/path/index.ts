@@ -1,6 +1,6 @@
-import {Dictionary} from 'aurelia-tsutil';
-import {QueryStringScalarValueSource, QueryStringSource} from './interfaces';
-export {QueryStringScalarValueSource, QueryStringSource} from './interfaces';
+import {Dictionary} from 'tsutil';
+import {TQueryStringScalarValueSource, TQueryStringSource} from './interfaces';
+export {TQueryStringScalarValueSource, TQueryStringSource} from './interfaces';
 
 function trimDots(ary: string[]) {
     var i: number, part: string;
@@ -109,10 +109,10 @@ function type(obj): string {
         : typeof obj;
 }
 
-export function buildQueryString(a: Dictionary<QueryStringSource>, traditional?: boolean): string {
+export function buildQueryString(a: Dictionary<TQueryStringSource>, traditional?: boolean): string {
     var prefix: string,
         s: string[] = [],
-        add = function (key: string, value: QueryStringScalarValueSource) {
+        add = function (key: string, value: TQueryStringScalarValueSource) {
             // If value is a function, invoke it and return its value
             value = typeof value === 'function' ? value() : (value == null ? '' : value);
             s[s.length] = encodeURIComponent(key) + '=' + encodeURIComponent(<string>value);
@@ -126,15 +126,15 @@ export function buildQueryString(a: Dictionary<QueryStringSource>, traditional?:
     return s.join('&').replace(r20, '+');
 }
 
-function _buildQueryString(prefix: string, obj: QueryStringSource, traditional: boolean, add: (key: string, value: QueryStringScalarValueSource) => void) {
+function _buildQueryString(prefix: string, obj: TQueryStringSource, traditional: boolean, add: (key: string, value: TQueryStringScalarValueSource) => void) {
     var name: string;
 
     if (Array.isArray(obj)) {
         // Serialize array item.
-        (<Array<QueryStringSource>>obj).forEach((v, i) => {
+        (<Array<TQueryStringSource>>obj).forEach((v, i) => {
             if (traditional || rbracket.test(prefix)) {
                 // Treat each array item as a scalar.
-                add(prefix, <QueryStringScalarValueSource>v);
+                add(prefix, <TQueryStringScalarValueSource>v);
             } else {
                 // Item is non-scalar (array or object), encode its numeric index.
                 _buildQueryString(
@@ -147,11 +147,11 @@ function _buildQueryString(prefix: string, obj: QueryStringSource, traditional: 
         });
     } else if (!traditional && type(obj) === 'object') {
         // Serialize object item.
-        for (name in <Dictionary<QueryStringSource>>obj) {
+        for (name in <Dictionary<TQueryStringSource>>obj) {
             _buildQueryString(prefix + '[' + name + ']', obj[name], traditional, add);
         }
     } else {
         // Serialize scalar item.
-        add(prefix, <QueryStringScalarValueSource>obj);
+        add(prefix, <TQueryStringScalarValueSource>obj);
     }
 }

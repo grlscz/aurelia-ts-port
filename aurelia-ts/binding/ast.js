@@ -10,10 +10,10 @@ define(["require", "exports", './path-observer', './composite-observer', './acce
             this.isChain = false;
             this.isAssignable = false;
         }
-        Expression.prototype.evaluate = function () {
+        Expression.prototype.evaluate = function (scope, valueConverters) {
             throw new Error("Cannot evaluate " + this);
         };
-        Expression.prototype.assign = function () {
+        Expression.prototype.assign = function (scope, value, valueConverters) {
             throw new Error("Cannot assign to " + this);
         };
         Expression.prototype.toString = function () {
